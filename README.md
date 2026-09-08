@@ -3,7 +3,8 @@
 A minimal, fast personal blog built with [Astro](https://astro.build). White background,
 blue accents, typing animation, zero client-side framework.
 
-**Live site**: `https://<your-site>.netlify.app`
+**Live site**: https://clairelyt.netlify.app (if you rename the Netlify site,
+also update `site` in `astro.config.mjs` and the Sitemap line in `public/robots.txt`)
 
 ## Features
 
@@ -11,7 +12,9 @@ blue accents, typing animation, zero client-side framework.
 - Bilingual (English default, Chinese at `/zh`) with a language switcher in the nav
 - Write posts in plain Markdown, no code changes needed to publish
 - Syntax highlighting for code blocks (Shiki, built into Astro)
-- Responsive design, no tracking, no comments, no ads
+- SEO ready: sitemap, RSS feeds (`/rss.xml`, `/zh/rss.xml`), Open Graph tags, hreflang
+- Self-hosted fonts (no Google Fonts CDN — loads fine in mainland China)
+- Responsive design, respects reduced-motion preference, no tracking, no comments, no ads
 
 ## Local development
 

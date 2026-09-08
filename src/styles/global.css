@@ -483,6 +483,29 @@ img {
   font-size: 0.85rem;
 }
 
+/* ============ Reduced motion ============ */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .fade-in {
+    opacity: 1;
+    transform: none;
+  }
+
+  .hero-typing .cursor {
+    display: none;
+  }
+}
+
 /* ============ Responsive ============ */
 @media (max-width: 600px) {
   .hero {
