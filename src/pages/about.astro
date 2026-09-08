@@ -1,0 +1,35 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const interests = ['Java', 'Distributed Systems', 'Open Source', 'Databases', 'System Design'];
+---
+
+<BaseLayout title="About — claire.dev" description="About me.">
+  <header class="page-header">
+    <h1>About<span class="gradient-text">.</span></h1>
+  </header>
+
+  <section class="section prose">
+    <p>
+      Hi! I'm <strong>Claire</strong>, a developer who enjoys building software and
+      learning in public. This blog is where I document what I learn — from debugging
+      war stories to deep dives into how things work under the hood.
+    </p>
+    <p>
+      I'm an open source enthusiast and believe the best way to understand something
+      is to explain it. Most posts here are notes-to-self that might happen to help you too.
+    </p>
+
+    <h2>Things I'm into</h2>
+    <ul class="about-grid">
+      {interests.map((item) => <li class="tag">{item}</li>)}
+    </ul>
+
+    <h2>About this site</h2>
+    <p>
+      Built with <a href="https://astro.build" rel="noopener">Astro</a>, styled with plain CSS,
+      and deployed on Netlify. The source code is open — feel free to use it as a template
+      for your own blog.
+    </p>
+  </section>
+</BaseLayout>
