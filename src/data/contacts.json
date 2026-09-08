@@ -1,12 +1,14 @@
-[
-  {
-    "label": "GitHub",
-    "value": "ClaireLytt",
-    "url": "https://github.com/ClaireLytt"
-  },
-  {
-    "label": "Email",
-    "value": "clairelyt@apache.org",
-    "url": "mailto:clairelyt@apache.org"
-  }
-]
+{
+  "contacts": [
+    {
+      "label": "GitHub",
+      "value": "ClaireLytt",
+      "url": "https://github.com/ClaireLytt"
+    },
+    {
+      "label": "Email",
+      "value": "clairelyt@apache.org",
+      "url": "mailto:clairelyt@apache.org"
+    }
+  ]
+}

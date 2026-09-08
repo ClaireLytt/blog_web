@@ -1,0 +1,75 @@
+backend:
+  name: git-gateway
+  branch: main
+  commit_messages:
+    create: "post: create {{slug}}"
+    update: "post: update {{slug}}"
+    delete: "post: delete {{slug}}"
+
+site_url: https://clairelyt.netlify.app
+media_folder: "public/images/uploads"
+public_folder: "/images/uploads"
+
+collections:
+  - name: "blog_en"
+    label: "Blog (English)"
+    folder: "src/content/blog/en"
+    create: true
+    extension: "md"
+    format: "frontmatter"
+    slug: "{{fields.slug}}"
+    fields:
+      - label: "Slug (URL & filename)"
+        name: "slug"
+        widget: "string"
+        hint: "Lowercase letters, numbers and dashes, e.g. my-new-post. Use the SAME slug for the Chinese version to link the two translations."
+        pattern: ["^[a-z0-9-]+$", "Only lowercase letters, numbers and dashes"]
+      - { label: "Title", name: "title", widget: "string" }
+      - { label: "Description", name: "description", widget: "string" }
+      - label: "Publish Date"
+        name: "pubDate"
+        widget: "datetime"
+        format: "YYYY-MM-DD"
+        date_format: "YYYY-MM-DD"
+        time_format: false
+      - { label: "Tags", name: "tags", widget: "list", required: false, default: [] }
+      - { label: "Body", name: "body", widget: "markdown" }
+
+  - name: "blog_zh"
+    label: "博客（中文）"
+    folder: "src/content/blog/zh"
+    create: true
+    extension: "md"
+    format: "frontmatter"
+    slug: "{{fields.slug}}"
+    fields:
+      - label: "Slug（URL 与文件名）"
+        name: "slug"
+        widget: "string"
+        hint: "小写字母、数字和短横线，如 my-new-post。与英文版使用相同的 slug 即可自动关联两个语言版本。"
+        pattern: ["^[a-z0-9-]+$", "只能用小写字母、数字和短横线"]
+      - { label: "标题", name: "title", widget: "string" }
+      - { label: "摘要", name: "description", widget: "string" }
+      - label: "发布日期"
+        name: "pubDate"
+        widget: "datetime"
+        format: "YYYY-MM-DD"
+        date_format: "YYYY-MM-DD"
+        time_format: false
+      - { label: "标签", name: "tags", widget: "list", required: false, default: [] }
+      - { label: "正文", name: "body", widget: "markdown" }
+
+  - name: "settings"
+    label: "Site Settings / 站点设置"
+    files:
+      - name: "contacts"
+        label: "Contact Info / 联系方式"
+        file: "src/data/contacts.json"
+        fields:
+          - label: "Contacts"
+            name: "contacts"
+            widget: "list"
+            fields:
+              - { label: "Label（名称，如 GitHub）", name: "label", widget: "string" }
+              - { label: "Value（显示文字）", name: "value", widget: "string" }
+              - { label: "URL（链接地址）", name: "url", widget: "string" }
