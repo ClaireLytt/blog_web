@@ -22,3 +22,9 @@ pnpm-debug.log*
 # editor
 .vscode/
 .idea/
+
+# personal workflow scripts
+scripts/
+
+# local tooling config
+.claude/

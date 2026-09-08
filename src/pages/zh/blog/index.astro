@@ -1,26 +1,26 @@
 ---
 import { getCollection } from 'astro:content';
-import BaseLayout from '../../layouts/BaseLayout.astro';
+import BaseLayout from '../../../layouts/BaseLayout.astro';
 
-const posts = (await getCollection('blog', ({ id }) => id.startsWith('en/'))).sort(
+const posts = (await getCollection('blog', ({ id }) => id.startsWith('zh/'))).sort(
   (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf()
 );
 
 const formatDate = (date: Date) =>
-  date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+  date.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' });
 ---
 
-<BaseLayout title="Blog — Yantong Li" description="All articles on programming and technology." lang="en">
+<BaseLayout title="博客 — Yantong Li" description="所有关于编程与技术的文章。" lang="zh">
   <header class="page-header">
-    <h1>Blog<span class="gradient-text">.</span></h1>
-    <p class="mono">{posts.length} {posts.length === 1 ? 'post' : 'posts'} and counting</p>
+    <h1>博客<span class="gradient-text">。</span></h1>
+    <p class="mono">共 {posts.length} 篇文章</p>
   </header>
 
   <section class="section">
     <ul class="post-list">
       {posts.map((post) => (
         <li class="fade-in">
-          <a href={`/blog/${post.id.slice(3)}`} class="post-card">
+          <a href={`/zh/blog/${post.id.slice(3)}`} class="post-card">
             <h3>{post.data.title}</h3>
             <p>{post.data.description}</p>
             <div class="post-meta">

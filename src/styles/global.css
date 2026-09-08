@@ -120,6 +120,21 @@ img {
   color: var(--color-accent);
 }
 
+.nav-links .lang-switch {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  padding: 0.25rem 0.7rem;
+  border: 1.5px solid var(--color-border);
+  border-radius: 999px;
+  color: var(--color-text-muted);
+  transition: border-color 0.2s ease, color 0.2s ease;
+}
+
+.nav-links .lang-switch:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
 .nav-links a.active::after {
   content: '';
   position: absolute;
@@ -431,6 +446,27 @@ img {
 .about-grid .tag {
   font-size: 0.85rem;
   padding: 0.3rem 0.85rem;
+}
+
+.contact-list {
+  list-style: none;
+  margin: 0.75rem 0 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.contact-list li {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+}
+
+.contact-list .contact-label {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  min-width: 5.5rem;
 }
 
 /* ============ Footer ============ */

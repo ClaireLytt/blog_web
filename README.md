@@ -8,6 +8,7 @@ blue accents, typing animation, zero client-side framework.
 ## Features
 
 - Static site — fast, secure, free to host
+- Bilingual (English default, Chinese at `/zh`) with a language switcher in the nav
 - Write posts in plain Markdown, no code changes needed to publish
 - Syntax highlighting for code blocks (Shiki, built into Astro)
 - Responsive design, no tracking, no comments, no ads
@@ -22,8 +23,11 @@ npm run build    # output to dist/
 
 ## How to publish a new post (no code changes)
 
-1. Create a new file in `src/content/blog/`, e.g. `my-new-post.md`.
-   The filename becomes the URL: `/blog/my-new-post`.
+1. Create a new file in `src/content/blog/en/` (English) or `src/content/blog/zh/`
+   (Chinese), e.g. `my-new-post.md`. The filename becomes the URL:
+   `/blog/my-new-post` or `/zh/blog/my-new-post`.
+   If the same filename exists in both folders, the language switcher on the post
+   page links the two versions together automatically.
 
 2. Start the file with this frontmatter:
 
@@ -44,6 +48,22 @@ npm run build    # output to dist/
      *Create new file* → paste content → *Commit changes*
 
 4. Netlify detects the push and rebuilds automatically (~1 minute). Done.
+
+## How to update contact info (no code changes)
+
+Edit `src/data/contacts.json` — each entry has a `label` (shown as the name),
+a `value` (shown as the link text), and a `url` (where the link goes):
+
+```json
+{
+  "label": "GitHub",
+  "value": "ClaireLytt",
+  "url": "https://github.com/ClaireLytt"
+}
+```
+
+Add, remove, or edit entries, then commit/push (locally or on the GitHub web UI)
+— both the English and Chinese About pages update automatically.
 
 ## Deployment (one-time setup)
 

@@ -1,19 +1,30 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import contacts from '../data/contacts.json';
 
-const interests = ['Java', 'Distributed Systems', 'Open Source', 'Databases', 'System Design'];
+const interests = [
+  'Java',
+  'Distributed Systems',
+  'Open Source',
+  'Databases',
+  'System Design',
+  'Big Data',
+  'Apache ShardingSphere',
+  'Apache SeaTunnel',
+];
 ---
 
-<BaseLayout title="About — claire.dev" description="About me.">
+<BaseLayout title="About — Yantong Li" description="About me." lang="en">
   <header class="page-header">
     <h1>About<span class="gradient-text">.</span></h1>
   </header>
 
   <section class="section prose">
     <p>
-      Hi! I'm <strong>Claire</strong>, a developer who enjoys building software and
-      learning in public. This blog is where I document what I learn — from debugging
-      war stories to deep dives into how things work under the hood.
+      Hi! I'm Yantong Li, a developer who enjoys building software and
+      learning in public. I'm an Apache ShardingSphere Committer.
+      This blog is where I document what I learn — from debugging war stories to
+      deep dives into how things work under the hood.
     </p>
     <p>
       I'm an open source enthusiast and believe the best way to understand something
@@ -23,6 +34,16 @@ const interests = ['Java', 'Distributed Systems', 'Open Source', 'Databases', 'S
     <h2>Things I'm into</h2>
     <ul class="about-grid">
       {interests.map((item) => <li class="tag">{item}</li>)}
+    </ul>
+
+    <h2>Contact</h2>
+    <ul class="contact-list">
+      {contacts.map((c) => (
+        <li>
+          <span class="contact-label">{c.label}</span>
+          <a href={c.url} rel="noopener">{c.value}</a>
+        </li>
+      ))}
     </ul>
 
     <h2>About this site</h2>

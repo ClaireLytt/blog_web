@@ -4,23 +4,54 @@ import '../styles/global.css';
 interface Props {
   title: string;
   description?: string;
+  lang?: 'en' | 'zh';
+  switchUrl?: string;
 }
 
-const { title, description = 'A personal blog about programming and technology.' } = Astro.props;
+const ui = {
+  en: {
+    description: 'A personal blog about programming and technology.',
+    nav: [
+      { href: '/', label: 'Home' },
+      { href: '/blog', label: 'Blog' },
+      { href: '/about', label: 'About' },
+    ],
+    switchLabel: '中文',
+    copyright: 'code is MIT licensed, articles all rights reserved.',
+  },
+  zh: {
+    description: '一个关于编程与技术的个人博客。',
+    nav: [
+      { href: '/zh', label: '首页' },
+      { href: '/zh/blog', label: '博客' },
+      { href: '/zh/about', label: '关于我' },
+    ],
+    switchLabel: 'EN',
+    copyright: '代码基于 MIT 协议开源，文章保留所有权利。',
+  },
+} as const;
+
+const { title, lang = 'en', description = ui[lang].description, switchUrl } = Astro.props;
 const { pathname } = Astro.url;
+const t = ui[lang];
 
-const navItems = [
-  { href: '/', label: 'Home' },
-  { href: '/blog', label: 'Blog' },
-  { href: '/about', label: 'About' },
-];
+const isActive = (href: string) => {
+  const home = lang === 'zh' ? '/zh' : '/';
+  if (href === home) return pathname === home || pathname === `${home}/`;
+  return pathname.startsWith(href);
+};
 
-const isActive = (href: string) =>
-  href === '/' ? pathname === '/' : pathname.startsWith(href);
+const defaultSwitchUrl =
+  lang === 'zh'
+    ? pathname.replace(/^\/zh\/?/, '/')
+    : pathname === '/'
+      ? '/zh'
+      : `/zh${pathname}`;
+const langSwitchUrl = switchUrl ?? defaultSwitchUrl;
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang={lang === 'zh' ? 'zh-CN' : 'en'}>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -37,13 +68,16 @@ const isActive = (href: string) =>
   <body>
     <header class="site-header">
       <nav class="nav">
-        <a href="/" class="nav-logo"><span class="prompt">~$</span> claire.dev</a>
+        <a href={lang === 'zh' ? '/zh' : '/'} class="nav-logo">Claire.dev</a>
         <ul class="nav-links">
-          {navItems.map((item) => (
+          {t.nav.map((item) => (
             <li>
               <a href={item.href} class={isActive(item.href) ? 'active' : ''}>{item.label}</a>
             </li>
           ))}
+          <li>
+            <a href={langSwitchUrl} class="lang-switch">{t.switchLabel}</a>
+          </li>
         </ul>
       </nav>
     </header>
@@ -54,7 +88,7 @@ const isActive = (href: string) =>
 
     <footer class="site-footer">
       <p class="mono">// built with Astro · deployed on Netlify</p>
-      <p>&copy; {new Date().getFullYear()} claire.dev — code is MIT licensed, articles all rights reserved.</p>
+      <p>&copy; {new Date().getFullYear()} Yantong Li — {t.copyright}</p>
     </footer>
 
     <script>
