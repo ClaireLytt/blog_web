@@ -9,6 +9,11 @@
       "label": "Email",
       "value": "clairelyt@apache.org",
       "url": "mailto:clairelyt@apache.org"
+    },
+    {
+      "label": "phone",
+      "value": "1",
+      "url": "1"
     }
   ]
 }
