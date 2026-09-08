@@ -1,0 +1,76 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+const posts = (await getCollection('blog', ({ id }) => id.startsWith('zh/')))
+  .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf())
+  .slice(0, 5);
+
+const formatDate = (date: Date) =>
+  date.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' });
+---
+
+<BaseLayout title="Yantong Li — 技术博客" lang="zh">
+  <section class="hero">
+    <h1>你好，我是 Yantong Li！</h1>
+    <p class="hero-typing"><span id="typing"></span><span class="cursor"></span></p>
+    <p class="hero-desc">
+      欢迎来到我的小站。我在这里记录编程、开源，以及一路学到的东西。
+    </p>
+    <a href="/zh/blog" class="btn btn-primary">阅读博客</a>
+    <a href="/zh/about" class="btn btn-ghost">关于我</a>
+  </section>
+
+  <section class="section">
+    <h2 class="section-title">最新文章</h2>
+    <ul class="post-list">
+      {posts.map((post) => (
+        <li class="fade-in">
+          <a href={`/zh/blog/${post.id.slice(3)}`} class="post-card">
+            <h3>{post.data.title}</h3>
+            <p>{post.data.description}</p>
+            <div class="post-meta">
+              <span>{formatDate(post.data.pubDate)}</span>
+              {post.data.tags.map((tag) => <span class="tag">{tag}</span>)}
+            </div>
+          </a>
+        </li>
+      ))}
+    </ul>
+  </section>
+
+  <script>
+    const phrases = [
+      '我用代码构建世界。',
+      '我为开源社区做贡献。',
+      '我写下学到的一切。',
+    ];
+    const el = document.getElementById('typing')!;
+    let phraseIndex = 0;
+    let charIndex = 0;
+    let deleting = false;
+
+    function tick() {
+      const phrase = phrases[phraseIndex]!;
+      if (!deleting) {
+        charIndex++;
+        el.textContent = phrase.slice(0, charIndex);
+        if (charIndex === phrase.length) {
+          deleting = true;
+          setTimeout(tick, 1800);
+          return;
+        }
+        setTimeout(tick, 120);
+      } else {
+        charIndex--;
+        el.textContent = phrase.slice(0, charIndex);
+        if (charIndex === 0) {
+          deleting = false;
+          phraseIndex = (phraseIndex + 1) % phrases.length;
+        }
+        setTimeout(tick, 50);
+      }
+    }
+    tick();
+  </script>
+</BaseLayout>

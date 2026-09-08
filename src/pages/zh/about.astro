@@ -1,0 +1,54 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import contacts from '../../data/contacts.json';
+
+const interests = [
+  'Java',
+  '分布式系统',
+  '开源',
+  '数据库',
+  '系统设计',
+  '大数据',
+  'Apache ShardingSphere',
+  'Apache SeaTunnel',
+];
+---
+
+<BaseLayout title="关于我 — Yantong Li" description="关于我。" lang="zh">
+  <header class="page-header">
+    <h1>关于我<span class="gradient-text">。</span></h1>
+  </header>
+
+  <section class="section prose">
+    <p>
+      你好！我是 Yantong Li，一名喜欢构建软件、公开学习的开发者。
+      我是 Apache ShardingSphere Committer。
+      这个博客记录我学到的东西——从调试实战到深入原理的技术剖析。
+    </p>
+    <p>
+      我是一名开源爱好者，相信理解一件事最好的方式就是把它讲清楚。
+      这里的大多数文章是写给自己的笔记，也许恰好能帮到你。
+    </p>
+
+    <h2>我感兴趣的方向</h2>
+    <ul class="about-grid">
+      {interests.map((item) => <li class="tag">{item}</li>)}
+    </ul>
+
+    <h2>联系我</h2>
+    <ul class="contact-list">
+      {contacts.map((c) => (
+        <li>
+          <span class="contact-label">{c.label}</span>
+          <a href={c.url} rel="noopener">{c.value}</a>
+        </li>
+      ))}
+    </ul>
+
+    <h2>关于本站</h2>
+    <p>
+      本站使用 <a href="https://astro.build" rel="noopener">Astro</a> 构建，纯 CSS 编写样式，
+      部署在 Netlify 上。源代码完全开放——欢迎拿去作为你自己博客的模板。
+    </p>
+  </section>
+</BaseLayout>

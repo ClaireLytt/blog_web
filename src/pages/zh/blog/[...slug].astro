@@ -1,0 +1,48 @@
+---
+import { getCollection, render } from 'astro:content';
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+
+export async function getStaticPaths() {
+  const posts = await getCollection('blog', ({ id }) => id.startsWith('zh/'));
+  return posts.map((post) => ({
+    params: { slug: post.id.slice(3) },
+    props: { post },
+  }));
+}
+
+const { post } = Astro.props;
+const { Content } = await render(post);
+const slug = post.id.slice(3);
+
+const translated = await getCollection('blog', ({ id }) => id === `en/${slug}`);
+const switchUrl = translated.length > 0 ? `/blog/${slug}` : '/blog';
+
+const formatDate = (date: Date) =>
+  date.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' });
+
+const chars = post.body?.replace(/\s/g, '').length ?? 0;
+const readingTime = Math.max(1, Math.round(chars / 400));
+---
+
+<BaseLayout title={`${post.data.title} — Yantong Li`} description={post.data.description} lang="zh" switchUrl={switchUrl}>
+  <article>
+    <header class="article-header">
+      <div class="post-meta">
+        <span>{formatDate(post.data.pubDate)}</span>
+        <span>·</span>
+        <span>约 {readingTime} 分钟</span>
+        {post.data.tags.map((tag) => <span class="tag">{tag}</span>)}
+      </div>
+      <h1>{post.data.title}</h1>
+      <p style="color: var(--color-text-muted);">{post.data.description}</p>
+    </header>
+
+    <div class="prose">
+      <Content />
+    </div>
+
+    <p style="margin-top: 3rem;">
+      <a href="/zh/blog" class="mono">&larr; 返回文章列表</a>
+    </p>
+  </article>
+</BaseLayout>

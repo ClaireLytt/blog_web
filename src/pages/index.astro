@@ -1,0 +1,77 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const posts = (await getCollection('blog', ({ id }) => id.startsWith('en/')))
+  .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf())
+  .slice(0, 5);
+
+const formatDate = (date: Date) =>
+  date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+---
+
+<BaseLayout title="Yantong Li — Tech Blog" lang="en">
+  <section class="hero">
+    <h1>Hi, I'm Yantong Li!</h1>
+    <p class="hero-typing"><span id="typing"></span><span class="cursor"></span></p>
+    <p class="hero-desc">
+      Welcome to my corner of the internet. I write about programming, open source,
+      and the things I learn along the way.
+    </p>
+    <a href="/blog" class="btn btn-primary">Read the Blog</a>
+    <a href="/about" class="btn btn-ghost">About Me</a>
+  </section>
+
+  <section class="section">
+    <h2 class="section-title">Latest Posts</h2>
+    <ul class="post-list">
+      {posts.map((post) => (
+        <li class="fade-in">
+          <a href={`/blog/${post.id.slice(3)}`} class="post-card">
+            <h3>{post.data.title}</h3>
+            <p>{post.data.description}</p>
+            <div class="post-meta">
+              <span>{formatDate(post.data.pubDate)}</span>
+              {post.data.tags.map((tag) => <span class="tag">{tag}</span>)}
+            </div>
+          </a>
+        </li>
+      ))}
+    </ul>
+  </section>
+
+  <script>
+    const phrases = [
+      'I build things with code.',
+      'I contribute to open source.',
+      'I write about what I learn.',
+    ];
+    const el = document.getElementById('typing')!;
+    let phraseIndex = 0;
+    let charIndex = 0;
+    let deleting = false;
+
+    function tick() {
+      const phrase = phrases[phraseIndex]!;
+      if (!deleting) {
+        charIndex++;
+        el.textContent = phrase.slice(0, charIndex);
+        if (charIndex === phrase.length) {
+          deleting = true;
+          setTimeout(tick, 1800);
+          return;
+        }
+        setTimeout(tick, 70);
+      } else {
+        charIndex--;
+        el.textContent = phrase.slice(0, charIndex);
+        if (charIndex === 0) {
+          deleting = false;
+          phraseIndex = (phraseIndex + 1) % phrases.length;
+        }
+        setTimeout(tick, 35);
+      }
+    }
+    tick();
+  </script>
+</BaseLayout>
