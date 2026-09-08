@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://clairelyt.netlify.app/sitemap-index.xml

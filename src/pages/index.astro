@@ -47,31 +47,36 @@ const formatDate = (date: Date) =>
       'I write about what I learn.',
     ];
     const el = document.getElementById('typing')!;
-    let phraseIndex = 0;
-    let charIndex = 0;
-    let deleting = false;
 
-    function tick() {
-      const phrase = phrases[phraseIndex]!;
-      if (!deleting) {
-        charIndex++;
-        el.textContent = phrase.slice(0, charIndex);
-        if (charIndex === phrase.length) {
-          deleting = true;
-          setTimeout(tick, 1800);
-          return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      el.textContent = phrases[0]!;
+    } else {
+      let phraseIndex = 0;
+      let charIndex = 0;
+      let deleting = false;
+
+      const tick = () => {
+        const phrase = phrases[phraseIndex]!;
+        if (!deleting) {
+          charIndex++;
+          el.textContent = phrase.slice(0, charIndex);
+          if (charIndex === phrase.length) {
+            deleting = true;
+            setTimeout(tick, 1800);
+            return;
+          }
+          setTimeout(tick, 70);
+        } else {
+          charIndex--;
+          el.textContent = phrase.slice(0, charIndex);
+          if (charIndex === 0) {
+            deleting = false;
+            phraseIndex = (phraseIndex + 1) % phrases.length;
+          }
+          setTimeout(tick, 35);
         }
-        setTimeout(tick, 70);
-      } else {
-        charIndex--;
-        el.textContent = phrase.slice(0, charIndex);
-        if (charIndex === 0) {
-          deleting = false;
-          phraseIndex = (phraseIndex + 1) % phrases.length;
-        }
-        setTimeout(tick, 35);
-      }
+      };
+      tick();
     }
-    tick();
   </script>
 </BaseLayout>

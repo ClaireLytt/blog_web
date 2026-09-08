@@ -1,6 +1,7 @@
 ---
 import { getCollection, render } from 'astro:content';
 import BaseLayout from '../../../layouts/BaseLayout.astro';
+import { readingTime } from '../../../utils/reading-time';
 
 export async function getStaticPaths() {
   const posts = await getCollection('blog', ({ id }) => id.startsWith('zh/'));
@@ -15,22 +16,29 @@ const { Content } = await render(post);
 const slug = post.id.slice(3);
 
 const translated = await getCollection('blog', ({ id }) => id === `en/${slug}`);
-const switchUrl = translated.length > 0 ? `/blog/${slug}` : '/blog';
+const hasTranslation = translated.length > 0;
+const switchUrl = hasTranslation ? `/blog/${slug}` : '/blog';
 
 const formatDate = (date: Date) =>
   date.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' });
 
-const chars = post.body?.replace(/\s/g, '').length ?? 0;
-const readingTime = Math.max(1, Math.round(chars / 400));
+const minutes = readingTime(post.body);
 ---
 
-<BaseLayout title={`${post.data.title} — Yantong Li`} description={post.data.description} lang="zh" switchUrl={switchUrl}>
+<BaseLayout
+  title={`${post.data.title} — Yantong Li`}
+  description={post.data.description}
+  lang="zh"
+  switchUrl={switchUrl}
+  ogType="article"
+  hasTranslation={hasTranslation}
+>
   <article>
     <header class="article-header">
       <div class="post-meta">
         <span>{formatDate(post.data.pubDate)}</span>
         <span>·</span>
-        <span>约 {readingTime} 分钟</span>
+        <span>约 {minutes} 分钟</span>
         {post.data.tags.map((tag) => <span class="tag">{tag}</span>)}
       </div>
       <h1>{post.data.title}</h1>

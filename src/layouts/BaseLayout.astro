@@ -1,4 +1,12 @@
 ---
+import '@fontsource/inter/400.css';
+import '@fontsource/inter/500.css';
+import '@fontsource/inter/600.css';
+import '@fontsource/inter/700.css';
+import '@fontsource/inter/800.css';
+import '@fontsource/jetbrains-mono/400.css';
+import '@fontsource/jetbrains-mono/500.css';
+import '@fontsource/jetbrains-mono/700.css';
 import '../styles/global.css';
 
 interface Props {
@@ -6,6 +14,9 @@ interface Props {
   description?: string;
   lang?: 'en' | 'zh';
   switchUrl?: string;
+  ogType?: 'website' | 'article';
+  /** false when switchUrl is a fallback (e.g. blog index), not a real translation */
+  hasTranslation?: boolean;
 }
 
 const ui = {
@@ -31,7 +42,14 @@ const ui = {
   },
 } as const;
 
-const { title, lang = 'en', description = ui[lang].description, switchUrl } = Astro.props;
+const {
+  title,
+  lang = 'en',
+  description = ui[lang].description,
+  switchUrl,
+  ogType = 'website',
+  hasTranslation = true,
+} = Astro.props;
 const { pathname } = Astro.url;
 const t = ui[lang];
 
@@ -48,6 +66,12 @@ const defaultSwitchUrl =
       ? '/zh'
       : `/zh${pathname}`;
 const langSwitchUrl = switchUrl ?? defaultSwitchUrl;
+
+const canonicalUrl = new URL(pathname, Astro.site);
+const alternateUrl = new URL(langSwitchUrl, Astro.site);
+const selfHreflang = lang === 'zh' ? 'zh-CN' : 'en';
+const otherHreflang = lang === 'zh' ? 'en' : 'zh-CN';
+const xDefaultUrl = lang === 'zh' ? alternateUrl : canonicalUrl;
 ---
 
 <!doctype html>
@@ -57,12 +81,30 @@ const langSwitchUrl = switchUrl ?? defaultSwitchUrl;
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content={description} />
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💻</text></svg>" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="canonical" href={canonicalUrl} />
+    {hasTranslation && (
+      <>
+        <link rel="alternate" hreflang={selfHreflang} href={canonicalUrl} />
+        <link rel="alternate" hreflang={otherHreflang} href={alternateUrl} />
+        <link rel="alternate" hreflang="x-default" href={xDefaultUrl} />
+      </>
+    )}
+    <link rel="sitemap" href="/sitemap-index.xml" />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap"
-      rel="stylesheet"
+      rel="alternate"
+      type="application/rss+xml"
+      title="Yantong Li — Tech Blog"
+      href={new URL(lang === 'zh' ? '/zh/rss.xml' : '/rss.xml', Astro.site)}
     />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content={ogType} />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:locale" content={lang === 'zh' ? 'zh_CN' : 'en_US'} />
+    <meta property="og:site_name" content="Yantong Li — Tech Blog" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
     <title>{title}</title>
   </head>
   <body>
