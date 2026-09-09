@@ -63,6 +63,7 @@ jobs:
           args: >-
             --root-dir ${{ github.workspace }}/dist
             --scheme https --scheme http
+            --exclude 'clairelyt\.netlify\.app'
             --exclude 'localhost'
             --exclude '(twitter|x)\.com'
             --max-retries 3
