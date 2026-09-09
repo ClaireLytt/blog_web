@@ -1,84 +1,79 @@
-# Personal Tech Blog
+# Claire.dev — 个人双语博客
 
-A minimal, fast personal blog built with [Astro](https://astro.build). White background,
-blue accents, typing animation, zero client-side framework.
+基于 [Astro 5](https://astro.build) 的中英双语静态博客，部署在 Netlify，通过 Decap CMS 在线发文。
 
-**Live site**: https://clairelyt.netlify.app (if you rename the Netlify site,
-also update `site` in `astro.config.mjs` and the Sitemap line in `public/robots.txt`)
+**线上地址**：https://clairelyt.netlify.app
 
-## Features
+## 功能
 
-- Static site — fast, secure, free to host
-- Bilingual (English default, Chinese at `/zh`) with a language switcher in the nav
-- Write posts in plain Markdown, no code changes needed to publish
-- Syntax highlighting for code blocks (Shiki, built into Astro)
-- SEO ready: sitemap, RSS feeds (`/rss.xml`, `/zh/rss.xml`), Open Graph tags, hreflang
-- Self-hosted fonts (no Google Fonts CDN — loads fine in mainland China)
-- Responsive design, respects reduced-motion preference, no tracking, no comments, no ads
+- **中英双语**：文章分别放在 `src/content/blog/en/` 和 `src/content/blog/zh/`，同名文件（相同 slug）自动关联为互译版本，页面右上角可一键切换语言
+- **在线写作（CMS）**：访问 `/admin` 进入 Decap CMS，可视化创建/编辑中英文文章、管理联系方式，保存即直接 commit 到 `main` 并自动部署
+- **内容校验**：文章 frontmatter 由 Zod schema 严格校验（`title`、`description`、`pubDate` 必填，`tags` 可选），格式错误会在构建时直接报错
+- **SEO**：自动生成 sitemap、RSS（中英各一份 `/rss.xml`、`/zh/rss.xml`）、canonical 与 hreflang 标签
+- **代码高亮**：Shiki（github-light 主题）
+- **零 JS 运行时**：纯静态输出，无客户端框架
 
-## Local development
+## 使用
+
+环境要求：Node.js 22（与 CI、Netlify 一致）。
 
 ```bash
-npm install
-npm run dev      # http://localhost:4321
-npm run build    # output to dist/
+npm install        # 安装依赖
+npm run dev        # 本地开发，默认 http://localhost:4321
+npm run build      # 构建到 dist/
+npm run preview    # 本地预览构建产物
+npm run check      # astro check 类型检查
 ```
 
-## How to publish a new post (no code changes)
+### 写文章
 
-1. Create a new file in `src/content/blog/en/` (English) or `src/content/blog/zh/`
-   (Chinese), e.g. `my-new-post.md`. The filename becomes the URL:
-   `/blog/my-new-post` or `/zh/blog/my-new-post`.
-   If the same filename exists in both folders, the language switcher on the post
-   page links the two versions together automatically.
+**方式一：CMS（推荐）**
+线上访问 `/admin`，选择 Blog (English) 或 博客（中文），填写 slug、标题、摘要、日期、正文后发布。中英文版本使用**相同的 slug** 即可自动关联。
 
-2. Start the file with this frontmatter:
+**方式二：手写 Markdown**
+在 `src/content/blog/en/` 或 `zh/` 下新建 `<slug>.md`：
 
-   ```markdown
-   ---
-   title: "My New Post"
-   description: "A one-line summary shown in the post list."
-   pubDate: 2026-09-08
-   tags: ["java", "opensource"]
-   ---
+```markdown
+---
+title: 文章标题
+description: 一句话摘要
+pubDate: 2026-09-09
+tags: [astro, blog]
+---
 
-   Your article content in Markdown goes here...
-   ```
-
-3. Publish it, either way:
-   - **Locally**: `git add . && git commit -m "post: my new post" && git push`
-   - **On GitHub web**: go to `src/content/blog/` in the repo → *Add file* →
-     *Create new file* → paste content → *Commit changes*
-
-4. Netlify detects the push and rebuilds automatically (~1 minute). Done.
-
-## How to update contact info (no code changes)
-
-Edit `src/data/contacts.json` — each entry has a `label` (shown as the name),
-a `value` (shown as the link text), and a `url` (where the link goes):
-
-```json
-{
-  "label": "GitHub",
-  "value": "ClaireLytt",
-  "url": "https://github.com/ClaireLytt"
-}
+正文……
 ```
 
-Add, remove, or edit entries, then commit/push (locally or on the GitHub web UI)
-— both the English and Chinese About pages update automatically.
+### 目录结构
 
-## Deployment (one-time setup)
+```
+src/
+├── content/blog/{en,zh}/   # 文章（同名 = 互译）
+├── content.config.ts       # 内容集合 schema
+├── layouts/BaseLayout.astro# 全站布局（导航、语言切换、SEO 标签）
+├── pages/                  # 路由（en 在根路径，zh 在 /zh 前缀下）
+└── data/contacts.json      # 联系方式（可在 CMS 中编辑）
+public/admin/               # Decap CMS 配置
+.github/workflows/ci.yml    # CI
+```
 
-1. Push this repo to GitHub (public is fine — only you have push access).
-2. Sign in to [Netlify](https://app.netlify.com) with your GitHub account.
-3. *Add new site* → *Import an existing project* → pick this repo.
-4. Build settings are auto-detected from `netlify.toml`. Click *Deploy*.
-5. Your site is live at `https://<random-name>.netlify.app` — rename it under
-   *Site settings → Site details → Change site name*.
+## CI
 
-## License
+每次 PR 到 `main`、以及每次 push 到 `main`（含 CMS 发文的提交）都会触发 [GitHub Actions](.github/workflows/ci.yml)：
 
-Source code is [MIT licensed](./LICENSE). Blog article content
-(`src/content/blog/`) is **all rights reserved** — please don't republish
-articles without permission.
+| 检查 | 说明 | 是否阻断 |
+|---|---|---|
+| `astro check` | .astro/.ts 类型检查（strict 模式） | ✅ 阻断 |
+| `astro build` | 构建；同时校验所有文章 frontmatter | ✅ 阻断 |
+| 内链检查 | lychee 离线扫描 `dist/` 中的站内链接与资源引用，抓死链 | ✅ 阻断 |
+| 中英配对检查 | 提示只有单语言版本的文章 | ⚠️ 仅警告 |
+| 外链检查 | 检查文章中的外部链接是否可达（独立 job，网络误报不挡合并） | ⚠️ 非阻断 |
+
+说明：
+
+- **PR 是门禁**：检查不过无法安心合并；**push main 是报警**：CMS 直接发到 `main` 的文章如有问题，会在 GitHub Actions 中显示红叉
+- 中英配对与外链检查的结果以 warning 注解形式出现在 Actions 运行页的 Summary 中
+
+## 部署
+
+Netlify 监听 `main` 分支，push 即自动构建部署（`npm run build` → 发布 `dist/`）。Node 版本已在 `netlify.toml` 中钉死为 22，与 CI 一致。
