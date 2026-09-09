@@ -61,6 +61,7 @@ jobs:
         uses: lycheeverse/lychee-action@v2
         with:
           args: >-
+            --root-dir ${{ github.workspace }}/dist
             --scheme https --scheme http
             --exclude 'localhost'
             --exclude '(twitter|x)\.com'
