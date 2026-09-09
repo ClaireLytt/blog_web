@@ -6,6 +6,9 @@ backend:
     update: "post: update {{slug}}"
     delete: "post: delete {{slug}}"
 
+publish_mode: editorial_workflow
+show_preview_links: true
+
 site_url: https://clairelyt.netlify.app
 media_folder: "public/images/uploads"
 public_folder: "/images/uploads"
