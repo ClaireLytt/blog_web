@@ -1,61 +1,59 @@
-# Personal Tech Blog
+# Claire.dev — Personal Bilingual Blog
 
-A minimal, fast personal blog built with [Astro](https://astro.build). White background,
-blue accents, typing animation, zero client-side framework.
+**English** | [中文](./README.zh-CN.md)
 
-**Live site**: https://clairelyt.netlify.app (if you rename the Netlify site,
-also update `site` in `astro.config.mjs` and the Sitemap line in `public/robots.txt`)
+A bilingual (English/Chinese) static blog built with [Astro 5](https://astro.build): white background, blue accents, typing animation, zero client-side framework. Deployed on Netlify with Decap CMS for online publishing.
+
+**Live site**: https://clairelyt.netlify.app
+(If you rename the Netlify site, also update `site` in `astro.config.mjs` and the Sitemap line in `public/robots.txt`.)
 
 ## Features
 
-- Static site — fast, secure, free to host
-- Bilingual (English default, Chinese at `/zh`) with a language switcher in the nav
-- Write posts in plain Markdown, no code changes needed to publish
-- Syntax highlighting for code blocks (Shiki, built into Astro)
-- SEO ready: sitemap, RSS feeds (`/rss.xml`, `/zh/rss.xml`), Open Graph tags, hreflang
-- Self-hosted fonts (no Google Fonts CDN — loads fine in mainland China)
-- Responsive design, respects reduced-motion preference, no tracking, no comments, no ads
+- **Fully static** — fast, secure, free to host, no client-side framework
+- **Bilingual** — English at the root, Chinese under `/zh`; posts live in `src/content/blog/en/` and `zh/`, files with the same name are automatically linked as translations, with a language switcher in the nav
+- **Online writing (CMS)** — visit `/admin` for Decap CMS: create/edit posts in both languages and manage contact info visually; saving commits straight to `main` and auto-deploys
+- **Content validation** — frontmatter is validated by a Zod schema (`title`, `description`, `pubDate` required; `tags` optional); malformed posts fail the build
+- **SEO ready** — sitemap, RSS feeds (`/rss.xml`, `/zh/rss.xml`), Open Graph, canonical and hreflang tags
+- **Syntax highlighting** — Shiki (github-light theme), built into Astro
+- **Self-hosted fonts** — no Google Fonts CDN, loads fine in mainland China
+- **Responsive design** — respects reduced-motion preference; no tracking, no comments, no ads
 
-## Local development
+## Usage
+
+Requires Node.js 22 (same as CI and Netlify).
 
 ```bash
-npm install
-npm run dev      # http://localhost:4321
-npm run build    # output to dist/
+npm install        # install dependencies
+npm run dev        # local dev server, http://localhost:4321
+npm run build      # build to dist/
+npm run preview    # preview the build locally
+npm run check      # astro check type checking
 ```
 
-## How to publish a new post (no code changes)
+### Publishing a new post (no code changes)
 
-1. Create a new file in `src/content/blog/en/` (English) or `src/content/blog/zh/`
-   (Chinese), e.g. `my-new-post.md`. The filename becomes the URL:
-   `/blog/my-new-post` or `/zh/blog/my-new-post`.
-   If the same filename exists in both folders, the language switcher on the post
-   page links the two versions together automatically.
+**Option 1: CMS (recommended)**
+Visit `/admin` on the live site, pick Blog (English) or 博客（中文）, fill in slug, title, description, date and body, then publish. Use the **same slug** for both languages to link them as translations.
 
-2. Start the file with this frontmatter:
+**Option 2: Plain Markdown**
+Create `my-new-post.md` in `src/content/blog/en/` (English) or `zh/` (Chinese). The filename becomes the URL (`/blog/my-new-post` or `/zh/blog/my-new-post`):
 
-   ```markdown
-   ---
-   title: "My New Post"
-   description: "A one-line summary shown in the post list."
-   pubDate: 2026-09-08
-   tags: ["java", "opensource"]
-   ---
+```markdown
+---
+title: "My New Post"
+description: "A one-line summary shown in the post list."
+pubDate: 2026-09-08
+tags: ["java", "opensource"]
+---
 
-   Your article content in Markdown goes here...
-   ```
+Your article content in Markdown goes here...
+```
 
-3. Publish it, either way:
-   - **Locally**: `git add . && git commit -m "post: my new post" && git push`
-   - **On GitHub web**: go to `src/content/blog/` in the repo → *Add file* →
-     *Create new file* → paste content → *Commit changes*
+Then commit and push (locally via `git push`, or on the GitHub web UI via *Add file* → *Create new file*). Netlify detects the push and rebuilds automatically (~1 minute).
 
-4. Netlify detects the push and rebuilds automatically (~1 minute). Done.
+### Updating contact info (no code changes)
 
-## How to update contact info (no code changes)
-
-Edit `src/data/contacts.json` — each entry has a `label` (shown as the name),
-a `value` (shown as the link text), and a `url` (where the link goes):
+Edit it under Site Settings in the CMS, or edit `src/data/contacts.json` directly — each entry has a `label` (name), `value` (link text) and `url` (destination):
 
 ```json
 {
@@ -65,20 +63,48 @@ a `value` (shown as the link text), and a `url` (where the link goes):
 }
 ```
 
-Add, remove, or edit entries, then commit/push (locally or on the GitHub web UI)
-— both the English and Chinese About pages update automatically.
+Both the English and Chinese About pages update automatically.
+
+### Project structure
+
+```
+src/
+├── content/blog/{en,zh}/    # posts (same filename = translations)
+├── content.config.ts        # content collection schema
+├── layouts/BaseLayout.astro # site-wide layout (nav, language switcher, SEO tags)
+├── pages/                   # routes (en at root, zh under /zh)
+└── data/contacts.json       # contact info (editable in the CMS)
+public/admin/                # Decap CMS config
+.github/workflows/ci.yml     # CI
+```
+
+## CI
+
+Every PR to `main` and every push to `main` (including CMS publishing commits) triggers [GitHub Actions](.github/workflows/ci.yml):
+
+| Check | What it does | Blocking |
+|---|---|---|
+| `astro check` | Type-checks .astro/.ts files (strict mode) | ✅ Blocking |
+| `astro build` | Builds the site; validates all post frontmatter | ✅ Blocking |
+| Internal links | lychee scans `dist/` offline for broken internal links and asset references | ✅ Blocking |
+| en/zh pairing | Warns about posts that exist in only one language | ⚠️ Warning only |
+| External links | Checks that outbound links in posts are reachable (separate job; network flakiness never blocks a merge) | ⚠️ Non-blocking |
+
+Notes:
+
+- **PRs are a gate**: failing checks mean don't merge. **Pushes to `main` are an alarm**: if a CMS-published post breaks something, GitHub Actions shows a red X after the fact
+- Pairing and external-link results appear as warning annotations in the Actions run summary
 
 ## Deployment (one-time setup)
 
-1. Push this repo to GitHub (public is fine — only you have push access).
-2. Sign in to [Netlify](https://app.netlify.com) with your GitHub account.
-3. *Add new site* → *Import an existing project* → pick this repo.
-4. Build settings are auto-detected from `netlify.toml`. Click *Deploy*.
-5. Your site is live at `https://<random-name>.netlify.app` — rename it under
-   *Site settings → Site details → Change site name*.
+1. Push this repo to GitHub (public is fine — only you have push access)
+2. Sign in to [Netlify](https://app.netlify.com) with your GitHub account
+3. *Add new site* → *Import an existing project* → pick this repo
+4. Build settings are auto-detected from `netlify.toml` (Node 22, `npm run build` → publish `dist/`). Click *Deploy*
+5. Your site is live at `https://<random-name>.netlify.app` — rename it under *Site settings → Site details → Change site name*
+
+After that, every push to `main` builds and deploys automatically.
 
 ## License
 
-Source code is [MIT licensed](./LICENSE). Blog article content
-(`src/content/blog/`) is **all rights reserved** — please don't republish
-articles without permission.
+Source code is [MIT licensed](./LICENSE). Blog article content (`src/content/blog/`) is **all rights reserved** — please don't republish articles without permission.

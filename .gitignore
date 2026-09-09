@@ -24,7 +24,7 @@ pnpm-debug.log*
 .idea/
 
 # personal workflow scripts
-scripts/
+/scripts/
 
 # local tooling config
 .claude/
