@@ -7,7 +7,8 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "check": "astro check"
+    "check": "astro check",
+    "test:ui": "node tests/smoke.mjs"
   },
   "dependencies": {
     "@astrojs/rss": "^4.0.19",
@@ -18,6 +19,7 @@
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.10",
+    "playwright": "^1.64.0",
     "typescript": "^5.9.3"
   }
 }
