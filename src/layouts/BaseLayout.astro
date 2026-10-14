@@ -108,6 +108,11 @@ const xDefaultUrl = lang === 'zh' ? alternateUrl : canonicalUrl;
     <title>{title}</title>
   </head>
   <body>
+    <div class="ambient" aria-hidden="true">
+      <div class="ambient-blob ambient-blob-a"></div>
+      <div class="ambient-blob ambient-blob-b"></div>
+    </div>
+
     <header class="site-header">
       <nav class="nav">
         <a href={lang === 'zh' ? '/zh' : '/'} class="nav-logo">Claire.dev</a>
