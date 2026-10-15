@@ -4,7 +4,7 @@
  * A breathing glass orb floats in the same white space as the blog.
  * One bullet: hit it (ideally at the top of its breath) and it bursts
  * into droplets; then the overlay fades and the blog is right there.
- * Skippable (× / Esc), remembered per session, and never shown on
+ * Skippable (× / Esc); shows again on every page load. Never shown on
  * touch devices or under prefers-reduced-motion.
  */
 interface Props {
@@ -36,7 +36,9 @@ const t =
 
   const skip =
     !gate ||
-    sessionStorage.getItem('zen-gate') === 'done' ||
+    // test escape hatch: automated browsers skip the gate unless a test
+    // opts in with ?game=1 — real visitors are never affected
+    (navigator.webdriver && !location.search.includes('game=1')) ||
     window.matchMedia('(prefers-reduced-motion: reduce)').matches ||
     window.matchMedia('(pointer: coarse)').matches;
 
@@ -115,7 +117,6 @@ const t =
 
     // ---- dismiss
     const dismiss = () => {
-      sessionStorage.setItem('zen-gate', 'done');
       document.body.style.overflow = '';
       gate.classList.add('zen-gate-out');
       setTimeout(() => gate.remove(), 700);
