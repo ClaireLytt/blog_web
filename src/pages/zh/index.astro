@@ -2,6 +2,7 @@
 import { getCollection } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import TerminalCard from '../../components/TerminalCard.astro';
+import ZenGate from '../../components/ZenGate.astro';
 
 const posts = (await getCollection('blog', ({ id }) => id.startsWith('zh/')))
   .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf())
@@ -12,6 +13,7 @@ const formatDate = (date: Date) =>
 ---
 
 <BaseLayout title="Yantong Li — 技术博客" lang="zh">
+  <ZenGate lang="zh" slot="gate" />
   <section class="hero">
     <p class="hero-eyebrow">Code · Open Source · Notes</p>
     <h1>你好，我是 <span class="shimmer">Yantong Li</span>！</h1>

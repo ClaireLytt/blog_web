@@ -81,6 +81,54 @@ const run = async () => {
   const page = await browser.newPage();
 
   // -------------------------------------------------- home (EN)
+  // -------------------------------------------------- zen gate (entry game)
+  // Must run first: the gate overlays the home page until played or skipped.
+  section('Zen gate (entry game)');
+  await check('gate shows on first visit and locks scroll', async () => {
+    await page.goto(baseUrl + '/');
+    await page.waitForSelector('.zen-gate', { timeout: 3000 });
+    const overflow = await page.evaluate(() => document.body.style.overflow);
+    if (overflow !== 'hidden') throw new Error(`scroll not locked: "${overflow}"`);
+  });
+  await check('missed shot wobbles the orb, gate stays', async () => {
+    await page.mouse.click(60, 400); // far from the orb and the close button
+    await page.waitForTimeout(250);
+    const word = await page.textContent('.zen-word');
+    if (!word.trim()) throw new Error('no feedback word after a miss');
+    const gone = (await page.locator('.zen-gate').count()) === 0;
+    if (gone) throw new Error('gate dismissed on a miss');
+  });
+  await check('shooting the orb bursts it and reveals the blog', async () => {
+    const box = await page.locator('.zen-orb').boundingBox();
+    await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+    await page.waitForSelector('.zen-gate', { state: 'detached', timeout: 6000 });
+    const overflow = await page.evaluate(() => document.body.style.overflow);
+    if (overflow === 'hidden') throw new Error('scroll still locked after win');
+  });
+  await check('gate does not reappear within the session', async () => {
+    await page.goto(baseUrl + '/');
+    await page.waitForTimeout(400);
+    const n = await page.locator('.zen-gate').count();
+    if (n !== 0) throw new Error('gate reappeared after being played');
+  });
+  await check('skip button (x) dismisses the gate', async () => {
+    const p2 = await browser.newPage(); // fresh tab = fresh sessionStorage
+    await p2.goto(baseUrl + '/zh');
+    await p2.waitForSelector('.zen-gate', { timeout: 3000 });
+    await p2.click('.zen-close');
+    await p2.waitForSelector('.zen-gate', { state: 'detached', timeout: 3000 });
+    await p2.close();
+  });
+  await check('gate never shows under reduced motion', async () => {
+    const ctx = await browser.newContext({ reducedMotion: 'reduce' });
+    const p3 = await ctx.newPage();
+    await p3.goto(baseUrl + '/');
+    await p3.waitForTimeout(400);
+    const n = await p3.locator('.zen-gate').count();
+    await ctx.close();
+    if (n !== 0) throw new Error('gate shown despite prefers-reduced-motion');
+  });
+
   section('Home (EN)');
   await check('page loads with correct title', async () => {
     const res = await page.goto(baseUrl + '/');

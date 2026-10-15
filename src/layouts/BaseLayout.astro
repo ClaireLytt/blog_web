@@ -129,6 +129,11 @@ const xDefaultUrl = lang === 'zh' ? alternateUrl : canonicalUrl;
       </nav>
     </header>
 
+    <!-- full-viewport overlays (e.g. the entry game) must live outside
+         main: its pageIn transform animation turns it into the containing
+         block for position: fixed descendants -->
+    <slot name="gate" />
+
     <main class="container">
       <slot />
     </main>

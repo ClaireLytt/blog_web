@@ -834,6 +834,138 @@ main.container {
   animation: blink 1s step-end infinite;
 }
 
+/* ============ Zen gate (entry game) ============ */
+.zen-gate {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  background: var(--color-bg);
+  cursor: none;
+  opacity: 1;
+  transition: opacity 0.65s ease;
+}
+
+.zen-gate-out {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.zen-canvas {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* the target: a breathing glass orb (scale driven by JS) */
+.zen-orb {
+  position: absolute;
+  left: 50%;
+  top: 44%;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 32% 28%, rgba(255, 255, 255, 0.95) 0%, transparent 32%),
+    radial-gradient(circle at 60% 65%, rgba(6, 182, 212, 0.55), transparent 70%),
+    radial-gradient(circle at 45% 45%, rgba(37, 99, 235, 0.65), rgba(37, 99, 235, 0.25) 75%);
+  box-shadow:
+    0 20px 50px rgba(37, 99, 235, 0.22),
+    inset 0 -8px 24px rgba(6, 182, 212, 0.35);
+  transition: opacity 0.25s ease;
+}
+
+.zen-orb-wobble {
+  animation: zenWobble 0.5s ease;
+}
+
+@keyframes zenWobble {
+  0%, 100% { margin-left: 0; }
+  25%      { margin-left: -7px; }
+  60%      { margin-left: 5px; }
+}
+
+/* the crosshair: a thin ring that breathes in sync with the orb */
+.zen-ring {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 36px;
+  height: 36px;
+  border: 1.5px solid var(--color-accent);
+  border-radius: 50%;
+  pointer-events: none;
+  opacity: 0.8;
+}
+
+.zen-ring::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  transform: translate(-50%, -50%);
+}
+
+.zen-hint {
+  position: absolute;
+  left: 50%;
+  bottom: 14%;
+  transform: translateX(-50%);
+  text-align: center;
+  font-size: 0.95rem;
+  color: var(--color-text);
+  letter-spacing: 0.08em;
+}
+
+.zen-hint .zen-sub {
+  display: block;
+  margin-top: 0.4rem;
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  letter-spacing: 0.14em;
+}
+
+.zen-word {
+  position: absolute;
+  left: 50%;
+  top: 62%;
+  transform: translateX(-50%);
+  font-size: 0.9rem;
+  color: var(--color-accent);
+  letter-spacing: 0.2em;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+.zen-word-in {
+  opacity: 1;
+}
+
+.zen-close {
+  position: absolute;
+  top: 1.2rem;
+  right: 1.5rem;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--color-border);
+  border-radius: 50%;
+  background: var(--color-bg);
+  color: var(--color-text-muted);
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: border-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+
+.zen-close:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+  transform: rotate(90deg);
+}
+
 /* ============ 404 ============ */
 .notfound-num {
   font-size: 5rem;
