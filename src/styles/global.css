@@ -884,17 +884,17 @@ main.container {
   60%      { margin-left: 5px; }
 }
 
-/* the crosshair: a thin ring that breathes in sync with the orb */
+/* the crosshair: ring + four ticks, idle sway and recoil driven by JS */
 .zen-ring {
   position: fixed;
   left: 0;
   top: 0;
-  width: 36px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
   border: 1.5px solid var(--color-accent);
   border-radius: 50%;
   pointer-events: none;
-  opacity: 0.8;
+  opacity: 0.85;
 }
 
 .zen-ring::after {
@@ -908,6 +908,145 @@ main.container {
   background: var(--color-accent);
   transform: translate(-50%, -50%);
 }
+
+.zen-tick {
+  position: absolute;
+  background: var(--color-accent);
+  transition: transform 0.12s ease-out;
+}
+
+.zen-tick-t, .zen-tick-b { left: 50%; width: 1.5px; height: 7px; margin-left: -0.75px; }
+.zen-tick-l, .zen-tick-r { top: 50%; height: 1.5px; width: 7px; margin-top: -0.75px; }
+.zen-tick-t { top: -11px; }
+.zen-tick-b { bottom: -11px; }
+.zen-tick-l { left: -11px; }
+.zen-tick-r { right: -11px; }
+
+/* recoil: ticks kick outward, ring flares */
+.zen-ring-fire { animation: zenRecoil 0.18s ease-out; }
+.zen-ring-fire .zen-tick-t { transform: translateY(-5px); }
+.zen-ring-fire .zen-tick-b { transform: translateY(5px); }
+.zen-ring-fire .zen-tick-l { transform: translateX(-5px); }
+.zen-ring-fire .zen-tick-r { transform: translateX(5px); }
+
+@keyframes zenRecoil {
+  0%   { scale: 1; }
+  35%  { scale: 1.3; }
+  100% { scale: 1; }
+}
+
+/* screen shake on every shot */
+.zen-shake { animation: zenShake 0.16s ease-out; }
+
+@keyframes zenShake {
+  0%, 100% { translate: 0 0; }
+  30%      { translate: 3px -2px; }
+  60%      { translate: -3px 2px; }
+}
+
+/* hitmarker: the classic X flashing at the point of impact */
+.zen-hitmarker {
+  position: fixed;
+  left: -100px;
+  top: -100px;
+  transform: translate(-50%, -50%);
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--color-accent-dark);
+  pointer-events: none;
+  opacity: 0;
+}
+
+.zen-hit-in { animation: zenHit 0.35s ease-out; }
+
+@keyframes zenHit {
+  0%   { opacity: 1; scale: 0.6; }
+  40%  { opacity: 1; scale: 1.25; }
+  100% { opacity: 0; scale: 1; }
+}
+
+/* bullet hole left behind by a miss */
+.zen-hole {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(37, 99, 235, 0.45);
+  background: radial-gradient(circle, rgba(30, 41, 59, 0.35) 0%, rgba(30, 41, 59, 0.12) 45%, transparent 70%);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  animation: zenHole 1.6s ease-out forwards;
+}
+
+@keyframes zenHole {
+  0%   { opacity: 1; scale: 1.4; }
+  15%  { scale: 1; }
+  70%  { opacity: 0.8; }
+  100% { opacity: 0; }
+}
+
+/* HUD corners */
+.zen-hud {
+  position: absolute;
+  font-size: 0.72rem;
+  letter-spacing: 0.22em;
+  color: var(--color-text-muted);
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  user-select: none;
+}
+
+.zen-hud-tl { top: 1.6rem; left: 1.8rem; }
+.zen-hud-br { bottom: 1.6rem; right: 1.8rem; }
+
+.zen-ammo {
+  color: var(--color-accent);
+  font-size: 0.85rem;
+  letter-spacing: 0.1em;
+}
+
+.zen-hp { display: inline-flex; gap: 4px; }
+
+.zen-pip {
+  width: 14px;
+  height: 5px;
+  border-radius: 2px;
+  background: var(--color-border);
+  transition: background 0.25s ease;
+}
+
+.zen-pip.on { background: var(--color-accent); }
+
+/* damage states: cracks spread across the glass */
+.zen-orb::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background:
+    linear-gradient(37deg, transparent 47.5%, rgba(255, 255, 255, 0.9) 49%, transparent 50.5%),
+    linear-gradient(118deg, transparent 58%, rgba(255, 255, 255, 0.8) 59.5%, transparent 61%);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.zen-orb::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background:
+    linear-gradient(-24deg, transparent 38%, rgba(255, 255, 255, 0.85) 39.5%, transparent 41%),
+    linear-gradient(83deg, transparent 68%, rgba(255, 255, 255, 0.75) 69.5%, transparent 71%),
+    linear-gradient(152deg, transparent 52%, rgba(255, 255, 255, 0.7) 53.5%, transparent 55%);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.zen-orb-crack1::before { opacity: 1; }
+.zen-orb-crack2::before { opacity: 1; }
+.zen-orb-crack2::after  { opacity: 1; }
 
 .zen-hint {
   position: absolute;

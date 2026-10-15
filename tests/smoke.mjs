@@ -92,17 +92,36 @@ const run = async () => {
     const overflow = await page.evaluate(() => document.body.style.overflow);
     if (overflow !== 'hidden') throw new Error(`scroll not locked: "${overflow}"`);
   });
-  await check('missed shot wobbles the orb, gate stays', async () => {
+  await check('HUD renders: ammo counter and target pips', async () => {
+    const ammo = await page.textContent('.zen-ammo');
+    if (ammo.trim() !== '5/5') throw new Error(`ammo = "${ammo}"`);
+    const pips = await page.locator('.zen-pip.on').count();
+    if (pips !== 3) throw new Error(`expected 3 lit pips, found ${pips}`);
+  });
+  await check('missed shot: MISS, bullet hole, ammo spent, gate stays', async () => {
     await page.mouse.click(60, 400); // far from the orb and the close button
     await page.waitForTimeout(250);
     const word = await page.textContent('.zen-word');
     if (!word.trim()) throw new Error('no feedback word after a miss');
-    const gone = (await page.locator('.zen-gate').count()) === 0;
-    if (gone) throw new Error('gate dismissed on a miss');
+    const ammo = await page.textContent('.zen-ammo');
+    if (ammo.trim() !== '4/5') throw new Error(`ammo after one shot = "${ammo}"`);
+    if ((await page.locator('.zen-hole').count()) === 0)
+      throw new Error('no bullet hole left behind');
+    if ((await page.locator('.zen-gate').count()) === 0)
+      throw new Error('gate dismissed on a miss');
   });
-  await check('shooting the orb bursts it and reveals the blog', async () => {
-    const box = await page.locator('.zen-orb').boundingBox();
-    await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+  await check('hits damage the orb until it bursts and reveals the blog', async () => {
+    let pipsAfterFirstHit = -1;
+    for (let shot = 0; shot < 6; shot++) {
+      if ((await page.locator('.zen-gate').count()) === 0) break;
+      const box = await page.locator('.zen-orb').boundingBox();
+      if (!box) break;
+      await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+      await page.waitForTimeout(450);
+      if (pipsAfterFirstHit === -1)
+        pipsAfterFirstHit = await page.locator('.zen-pip.on').count();
+    }
+    if (pipsAfterFirstHit >= 3) throw new Error('target pips did not drop after a hit');
     await page.waitForSelector('.zen-gate', { state: 'detached', timeout: 6000 });
     const overflow = await page.evaluate(() => document.body.style.overflow);
     if (overflow === 'hidden') throw new Error('scroll still locked after win');
@@ -343,12 +362,15 @@ const run = async () => {
   });
   await check('post card arrow floats in on hover', async () => {
     await page.goto(baseUrl + '/blog');
+    await page.mouse.move(0, 0); // park the mouse off the card first
+    await page.waitForTimeout(350);
     const card = page.locator('.post-card').first();
     const before = await card.evaluate((el) =>
       parseFloat(getComputedStyle(el, '::after').opacity)
     );
-    await card.hover();
-    await page.waitForTimeout(350);
+    const box = await card.boundingBox();
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2, { steps: 5 });
+    await page.waitForTimeout(450);
     const after = await card.evaluate((el) =>
       parseFloat(getComputedStyle(el, '::after').opacity)
     );

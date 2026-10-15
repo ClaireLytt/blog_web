@@ -1,11 +1,14 @@
 ---
 /**
- * Zen entry game — "one shot."
+ * Entry game — zen target, tactical feel.
  * A breathing glass orb floats in the same white space as the blog.
- * One bullet: hit it (ideally at the top of its breath) and it bursts
- * into droplets; then the overlay fades and the blog is right there.
+ * FPS layer on top: 5 rounds, the orb takes 3 damage, hitting at the
+ * top of its breath counts double. Crosshair recoil, hitmarkers,
+ * bullet holes, screen shake, reload. Winning bursts the orb into
+ * droplets and the blog is right there.
  * Skippable (× / Esc); shows again on every page load. Never shown on
- * touch devices or under prefers-reduced-motion.
+ * touch devices or under prefers-reduced-motion. Automated browsers
+ * skip it unless the test opts in with ?game=1.
  */
 interface Props {
   lang?: 'en' | 'zh';
@@ -15,20 +18,59 @@ const { lang = 'en' } = Astro.props;
 
 const t =
   lang === 'zh'
-    ? { hint: '一息，一靶。', sub: '在它呼吸最满的时候', perfect: '完美。', ok: '破了。', miss: '再来。', scroll: '向下滑动' }
-    : { hint: 'one shot.', sub: 'strike when it breathes fullest', perfect: 'perfect.', ok: 'done.', miss: 'again.', scroll: 'scroll down' };
+    ? {
+        hint: '一个目标，五发子弹。',
+        sub: '在它呼吸最满时伤害翻倍',
+        perfect: 'PERFECT ×2',
+        ok: 'HIT',
+        miss: 'MISS',
+        reload: 'RELOADING…',
+        down: 'TARGET DOWN',
+        scroll: '向下滑动',
+        ammo: 'AMMO',
+        target: 'TARGET',
+      }
+    : {
+        hint: 'one target. five rounds.',
+        sub: 'a full breath counts double',
+        perfect: 'PERFECT ×2',
+        ok: 'HIT',
+        miss: 'MISS',
+        reload: 'RELOADING…',
+        down: 'TARGET DOWN',
+        scroll: 'scroll down',
+        ammo: 'AMMO',
+        target: 'TARGET',
+      };
 ---
 
 <div class="zen-gate" id="zen-gate" data-i18n={JSON.stringify(t)}>
   <canvas class="zen-canvas" aria-hidden="true"></canvas>
   <div class="zen-orb" aria-hidden="true"></div>
-  <div class="zen-ring" aria-hidden="true"></div>
+  <div class="zen-ring" aria-hidden="true">
+    <span class="zen-tick zen-tick-t"></span>
+    <span class="zen-tick zen-tick-b"></span>
+    <span class="zen-tick zen-tick-l"></span>
+    <span class="zen-tick zen-tick-r"></span>
+  </div>
+  <div class="zen-hitmarker mono" aria-hidden="true">✕</div>
+
+  <div class="zen-hud zen-hud-tl mono" aria-hidden="true">
+    {t.target}
+    <span class="zen-hp">
+      <i class="zen-pip on"></i><i class="zen-pip on"></i><i class="zen-pip on"></i>
+    </span>
+  </div>
+  <div class="zen-hud zen-hud-br mono">
+    {t.ammo} <span class="zen-ammo">5/5</span>
+  </div>
+
   <p class="zen-hint mono">
     {t.hint}
     <span class="zen-sub">{t.sub}</span>
   </p>
   <p class="zen-word mono" aria-live="polite"></p>
-  <button class="zen-close" aria-label="skip">×</button>
+  <button class="zen-close mono" aria-label="skip">×</button>
 </div>
 
 <script>
@@ -49,6 +91,9 @@ const t =
     const orb = gate.querySelector<HTMLElement>('.zen-orb')!;
     const ring = gate.querySelector<HTMLElement>('.zen-ring')!;
     const word = gate.querySelector<HTMLElement>('.zen-word')!;
+    const ammoEl = gate.querySelector<HTMLElement>('.zen-ammo')!;
+    const pips = gate.querySelectorAll<HTMLElement>('.zen-pip');
+    const hitmark = gate.querySelector<HTMLElement>('.zen-hitmarker')!;
     const canvas = gate.querySelector<HTMLCanvasElement>('.zen-canvas')!;
     const ctx = canvas.getContext('2d')!;
 
@@ -56,23 +101,33 @@ const t =
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
 
-    // ---- breathing, driven in JS so we know the exact phase
-    let phase = 0;
+    // ---- game state
+    const MAG = 5;
+    let ammo = MAG;
+    let hp = 3;
     let alive = true;
+    let reloading = false;
+
+    // ---- breathing + crosshair sway, driven in JS so we know the phase
+    let phase = 0;
     let start = performance.now();
     let mx = window.innerWidth / 2;
     let my = window.innerHeight * 0.75;
 
-    const breathe = (now: number) => {
+    const loop = (now: number) => {
+      const s = (now - start) / 1000;
       phase = Math.sin((now - start) / 1400); // full breath ≈ 8.8s
       if (alive) {
         orb.style.transform = `translate(-50%, -50%) scale(${1 + 0.14 * phase})`;
         orb.style.opacity = String(0.85 + 0.15 * phase);
       }
-      ring.style.transform = `translate(${mx}px, ${my}px) translate(-50%, -50%) scale(${1 + 0.14 * phase})`;
-      requestAnimationFrame(breathe);
+      // idle sway: the crosshair never sits perfectly still
+      const swayX = Math.sin(s * 1.7) * 3 + Math.sin(s * 0.9 + 2) * 2;
+      const swayY = Math.cos(s * 1.3) * 3 + Math.sin(s * 2.1 + 1) * 2;
+      ring.style.transform = `translate(${mx + swayX}px, ${my + swayY}px) translate(-50%, -50%)`;
+      requestAnimationFrame(loop);
     };
-    requestAnimationFrame(breathe);
+    requestAnimationFrame(loop);
 
     gate.addEventListener('pointermove', (e) => {
       mx = e.clientX;
@@ -81,8 +136,9 @@ const t =
 
     // ---- droplets
     const drops: { x: number; y: number; vx: number; vy: number; r: number; a: number; hue: string }[] = [];
-    const burst = (x: number, y: number) => {
-      for (let i = 0; i < 48; i++) {
+    let raining = false;
+    const burst = (x: number, y: number, n: number) => {
+      for (let i = 0; i < n; i++) {
         const ang = Math.random() * Math.PI * 2;
         const v = 1.5 + Math.random() * 5;
         drops.push({
@@ -95,24 +151,55 @@ const t =
           hue: Math.random() < 0.5 ? '37, 99, 235' : '6, 182, 212',
         });
       }
+      if (raining) return;
+      raining = true;
       const tick = () => {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        let liveDrops = 0;
+        let live = 0;
         for (const d of drops) {
           d.vy += 0.16;
           d.x += d.vx;
           d.y += d.vy;
           d.a -= 0.011;
           if (d.a <= 0) continue;
-          liveDrops++;
+          live++;
           ctx.fillStyle = `rgba(${d.hue}, ${d.a * 0.8})`;
           ctx.beginPath();
           ctx.arc(d.x, d.y, d.r, 0, Math.PI * 2);
           ctx.fill();
         }
-        if (liveDrops > 0) requestAnimationFrame(tick);
+        if (live > 0) requestAnimationFrame(tick);
+        else raining = false;
       };
       tick();
+    };
+
+    // ---- feedback helpers
+    const say = (msg: string, hold = 900) => {
+      word.textContent = msg;
+      word.classList.add('zen-word-in');
+      if (hold > 0) setTimeout(() => word.classList.remove('zen-word-in'), hold);
+    };
+
+    const replay = (el: HTMLElement, cls: string) => {
+      el.classList.remove(cls);
+      void el.offsetWidth;
+      el.classList.add(cls);
+    };
+
+    const bulletHole = (x: number, y: number) => {
+      const h = document.createElement('span');
+      h.className = 'zen-hole';
+      h.style.left = `${x}px`;
+      h.style.top = `${y}px`;
+      gate.appendChild(h);
+      setTimeout(() => h.remove(), 1600);
+    };
+
+    const fireFeedback = () => {
+      replay(gate, 'zen-shake');
+      replay(ring, 'zen-ring-fire');
+      ammoEl.textContent = `${ammo}/${MAG}`;
     };
 
     // ---- dismiss
@@ -124,30 +211,54 @@ const t =
 
     // ---- shooting
     gate.addEventListener('click', (e) => {
-      if (!alive) return;
+      if (!alive || reloading) return;
       if ((e.target as HTMLElement).closest('.zen-close')) return;
+
+      ammo--;
+      fireFeedback();
+
       const r = orb.getBoundingClientRect();
       const cx = r.left + r.width / 2;
       const cy = r.top + r.height / 2;
       const hit = Math.hypot(e.clientX - cx, e.clientY - cy) <= r.width / 2 + 6;
 
       if (hit) {
-        alive = false;
-        word.textContent = phase > 0.82 ? t.perfect : t.ok;
-        word.classList.add('zen-word-in');
-        orb.style.opacity = '0';
-        burst(cx, cy);
-        setTimeout(() => {
-          word.textContent = `▼ ${t.scroll}`;
-          setTimeout(dismiss, 900);
-        }, 1100);
+        const perfect = phase > 0.82;
+        hp -= perfect ? 2 : 1;
+        pips.forEach((p, i) => p.classList.toggle('on', i < Math.max(hp, 0)));
+        hitmark.style.left = `${e.clientX}px`;
+        hitmark.style.top = `${e.clientY}px`;
+        replay(hitmark, 'zen-hit-in');
+
+        if (hp <= 0) {
+          alive = false;
+          say(t.down, 0);
+          orb.style.opacity = '0';
+          burst(cx, cy, 52);
+          setTimeout(() => {
+            say(`▼ ${t.scroll}`, 0);
+            setTimeout(dismiss, 900);
+          }, 1100);
+          return;
+        }
+        say(perfect ? t.perfect : t.ok);
+        orb.classList.add(hp === 1 ? 'zen-orb-crack2' : 'zen-orb-crack1');
+        burst(e.clientX, e.clientY, 14);
       } else {
-        word.textContent = t.miss;
-        word.classList.add('zen-word-in');
-        orb.classList.remove('zen-orb-wobble');
-        void orb.offsetWidth; // restart the wobble animation
-        orb.classList.add('zen-orb-wobble');
-        setTimeout(() => word.classList.remove('zen-word-in'), 900);
+        say(t.miss);
+        bulletHole(e.clientX, e.clientY);
+        replay(orb, 'zen-orb-wobble');
+      }
+
+      if (ammo === 0) {
+        reloading = true;
+        say(t.reload, 0);
+        setTimeout(() => {
+          ammo = MAG;
+          ammoEl.textContent = `${ammo}/${MAG}`;
+          reloading = false;
+          word.classList.remove('zen-word-in');
+        }, 1000);
       }
     });
 
