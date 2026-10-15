@@ -1,6 +1,7 @@
 ---
 import { getCollection } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
+import TerminalCard from '../components/TerminalCard.astro';
 
 const posts = (await getCollection('blog', ({ id }) => id.startsWith('en/')))
   .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf())
@@ -13,7 +14,7 @@ const formatDate = (date: Date) =>
 <BaseLayout title="Yantong Li — Tech Blog" lang="en">
   <section class="hero">
     <p class="hero-eyebrow">Code · Open Source · Notes</p>
-    <h1>Hi, I'm Yantong Li!</h1>
+    <h1>Hi, I'm <span class="shimmer">Yantong Li</span>!</h1>
     <p class="hero-typing"><span id="typing"></span><span class="cursor"></span></p>
     <hr class="hero-rule" />
     <p class="hero-desc">
@@ -22,6 +23,16 @@ const formatDate = (date: Date) =>
     </p>
     <a href="/blog" class="btn btn-primary">Read the Blog<span class="btn-arrow">›</span></a>
     <a href="/about" class="btn btn-ghost">About Me</a>
+  </section>
+
+  <section class="section">
+    <TerminalCard
+      lines={[
+        { cmd: 'whoami', out: ['Yantong Li — developer, **Apache ShardingSphere** Committer'] },
+        { cmd: 'cat interests.txt', out: ['java · distributed systems · open source · databases'] },
+        { cmd: 'echo $MOTTO', out: ['"The best way to understand something is to explain it."'] },
+      ]}
+    />
   </section>
 
   <section class="section">

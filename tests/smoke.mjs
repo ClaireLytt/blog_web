@@ -201,6 +201,49 @@ const run = async () => {
     const scaleX = parseFloat(t.replace('matrix(', ''));
     if (!(scaleX > 0.5)) throw new Error(`progress barely moved: ${t}`);
   });
+  await check('hero dot-grid backdrop present', async () => {
+    await page.goto(baseUrl + '/');
+    const bg = await page
+      .locator('.hero')
+      .evaluate((el) => getComputedStyle(el, '::before').backgroundImage);
+    if (!/radial-gradient/.test(bg)) throw new Error('hero::before has no dot grid');
+  });
+  await check('name shimmer animation running', async () => {
+    const name = await page
+      .locator('.hero .shimmer')
+      .evaluate((el) => getComputedStyle(el).animationName);
+    if (!/shimmer/.test(name)) throw new Error(`animation-name = ${name}`);
+  });
+  await check('terminal card types its lines', async () => {
+    const term = page.locator('.term');
+    await term.scrollIntoViewIfNeeded();
+    // typing starts via IntersectionObserver; wait for the first prompt
+    await page.waitForSelector('.term-body .t-prompt', { timeout: 5000 });
+    const before = (await page.textContent('.term-body')).length;
+    await page.waitForTimeout(1200);
+    const after = (await page.textContent('.term-body')).length;
+    if (!(after > before)) throw new Error('terminal text did not grow (not typing)');
+  });
+  await check('terminal renders instantly under reduced motion', async () => {
+    const ctx = await browser.newContext({ reducedMotion: 'reduce' });
+    const p2 = await ctx.newPage();
+    await p2.goto(baseUrl + '/');
+    const prompts = await p2.locator('.term-body .t-prompt').count();
+    if (prompts < 3) throw new Error(`expected >=3 prompts immediately, found ${prompts}`);
+    await ctx.close();
+  });
+  await check('post card spotlight follows the pointer', async () => {
+    await page.goto(baseUrl + '/blog');
+    const card = page.locator('.post-card').first();
+    const box = await card.boundingBox();
+    await page.mouse.move(box.x + 30, box.y + 20);
+    await page.waitForTimeout(150);
+    const mx1 = await card.evaluate((el) => el.style.getPropertyValue('--mx'));
+    await page.mouse.move(box.x + box.width - 30, box.y + 30);
+    await page.waitForTimeout(150);
+    const mx2 = await card.evaluate((el) => el.style.getPropertyValue('--mx'));
+    if (!mx1 || mx1 === mx2) throw new Error(`--mx did not track pointer: ${mx1} -> ${mx2}`);
+  });
   await check('404 number is animated', async () => {
     await page.goto(baseUrl + '/no-such-page-xyz');
     const name = await page

@@ -167,6 +167,21 @@ main.container {
   color: transparent;
 }
 
+/* gradient slowly flows back and forth through the letters */
+.shimmer {
+  background: linear-gradient(110deg, #2563eb 20%, #06b6d4 45%, #2563eb 70%);
+  background-size: 250% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: shimmer 7s ease-in-out infinite alternate;
+}
+
+@keyframes shimmer {
+  from { background-position: 0% 0; }
+  to   { background-position: 100% 0; }
+}
+
 .mono {
   font-family: var(--font-mono);
 }
@@ -279,8 +294,22 @@ main.container {
 
 /* ============ Hero ============ */
 .hero {
+  position: relative;
   padding: 5.5rem 0 4rem;
   text-align: left;
+}
+
+/* blueprint dot grid behind the hero, fading out from the top-left */
+.hero::before {
+  content: '';
+  position: absolute;
+  inset: -2rem -4rem;
+  z-index: -1;
+  pointer-events: none;
+  background-image: radial-gradient(rgba(37, 99, 235, 0.22) 1px, transparent 1px);
+  background-size: 22px 22px;
+  mask-image: radial-gradient(ellipse 70% 80% at 25% 30%, black 0%, transparent 70%);
+  -webkit-mask-image: radial-gradient(ellipse 70% 80% at 25% 30%, black 0%, transparent 70%);
 }
 
 /* cinematic entrance: children rise in one after another */
@@ -471,6 +500,26 @@ main.container {
   background: var(--color-bg);
   box-shadow: var(--shadow-card);
   transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+}
+
+/* spotlight: a faint pool of light follows the pointer (JS sets --mx/--my) */
+.post-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: radial-gradient(
+    280px circle at var(--mx, 50%) var(--my, 50%),
+    rgba(37, 99, 235, 0.06),
+    transparent 65%
+  );
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.post-card:hover::before {
+  opacity: 1;
 }
 
 /* arrow floats in from the right on hover — same language as .btn-arrow */
@@ -725,6 +774,64 @@ main.container {
 
 .site-footer .mono {
   font-size: 0.85rem;
+}
+
+/* ============ Terminal card ============ */
+.term {
+  margin: 0 0 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: #0f172a;
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+  font-family: var(--font-mono);
+  font-size: 0.88rem;
+  line-height: 1.75;
+}
+
+.term-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 0.9rem;
+  background: #1e293b;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.term-dot {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+}
+
+.term-dot-r { background: #f87171; }
+.term-dot-y { background: #fbbf24; }
+.term-dot-g { background: #34d399; }
+
+.term-title {
+  margin-left: 0.5rem;
+  color: #64748b;
+  font-size: 0.78rem;
+}
+
+.term-body {
+  padding: 1rem 1.2rem 1.2rem;
+  min-height: 7.5em;
+  color: #e2e8f0;
+}
+
+.term-body .t-prompt { color: #34d399; }
+.term-body .t-cmd { color: #e2e8f0; }
+.term-body .t-out { color: #94a3b8; }
+.term-body .t-accent { color: #60a5fa; }
+
+.term-cursor {
+  display: inline-block;
+  width: 7px;
+  height: 1em;
+  background: #60a5fa;
+  vertical-align: text-bottom;
+  animation: blink 1s step-end infinite;
 }
 
 /* ============ 404 ============ */
