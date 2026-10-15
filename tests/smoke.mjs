@@ -81,63 +81,79 @@ const run = async () => {
   const page = await browser.newPage();
 
   // -------------------------------------------------- home (EN)
-  // -------------------------------------------------- zen gate (entry game)
+  // -------------------------------------------------- conductor gate (entry game)
   // Must run first: the gate overlays the home page until played or skipped.
-  section('Zen gate (entry game)');
-  // automated browsers only see the gate with ?game=1 (navigator.webdriver
-  // escape hatch) — real visitors get it on every page load
+  // Automated browsers only see it with ?game=1 (navigator.webdriver escape
+  // hatch) — real visitors get it on every page load.
+  section('Conductor gate (entry game)');
   await check('gate shows on page load and locks scroll', async () => {
     await page.goto(baseUrl + '/?game=1');
-    await page.waitForSelector('.zen-gate', { timeout: 3000 });
+    await page.waitForSelector('.con-gate', { timeout: 3000 });
     const overflow = await page.evaluate(() => document.body.style.overflow);
     if (overflow !== 'hidden') throw new Error(`scroll not locked: "${overflow}"`);
   });
-  await check('HUD renders: ammo counter and target pips', async () => {
-    const ammo = await page.textContent('.zen-ammo');
-    if (ammo.trim() !== '5/5') throw new Error(`ammo = "${ammo}"`);
-    const pips = await page.locator('.zen-pip.on').count();
-    if (pips !== 3) throw new Error(`expected 3 lit pips, found ${pips}`);
+  await check('staff renders three unlit notes and the counter', async () => {
+    const n = await page.locator('.con-note').count();
+    if (n !== 3) throw new Error(`expected 3 notes, found ${n}`);
+    const lit = await page.locator('.con-note.lit').count();
+    if (lit !== 0) throw new Error(`${lit} notes lit before playing`);
+    const count = await page.textContent('.con-count');
+    if (!/0\/3/.test(count)) throw new Error(`counter = "${count}"`);
   });
-  await check('missed shot: MISS, bullet hole, ammo spent, gate stays', async () => {
-    await page.mouse.click(60, 400); // far from the orb and the close button
-    await page.waitForTimeout(250);
-    const word = await page.textContent('.zen-word');
-    if (!word.trim()) throw new Error('no feedback word after a miss');
-    const ammo = await page.textContent('.zen-ammo');
-    if (ammo.trim() !== '4/5') throw new Error(`ammo after one shot = "${ammo}"`);
-    if ((await page.locator('.zen-hole').count()) === 0)
-      throw new Error('no bullet hole left behind');
-    if ((await page.locator('.zen-gate').count()) === 0)
-      throw new Error('gate dismissed on a miss');
+  await check('holding and waving plays (baton grows, bars canvas live)', async () => {
+    await page.mouse.move(200, 500);
+    await page.mouse.down();
+    await page.waitForTimeout(150);
+    const on = await page.locator('.con-dot.con-dot-on').count();
+    if (on !== 1) throw new Error('baton did not light up while holding');
+    await page.mouse.move(200, 200, { steps: 8 });
+    await page.mouse.up();
+    await page.waitForTimeout(150);
+    const off = await page.locator('.con-dot.con-dot-on').count();
+    if (off !== 0) throw new Error('baton stayed lit after release');
   });
-  await check('hits damage the orb until it bursts and reveals the blog', async () => {
-    let pipsAfterFirstHit = -1;
-    for (let shot = 0; shot < 6; shot++) {
-      if ((await page.locator('.zen-gate').count()) === 0) break;
-      const box = await page.locator('.zen-orb').boundingBox();
-      if (!box) break;
-      await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
-      await page.waitForTimeout(450);
-      if (pipsAfterFirstHit === -1)
-        pipsAfterFirstHit = await page.locator('.zen-pip.on').count();
+  await check('sweeping through the notes lights them and finishes', async () => {
+    const boxes = [];
+    for (const note of await page.locator('.con-note').all()) {
+      boxes.push(await note.boundingBox());
     }
-    if (pipsAfterFirstHit >= 3) throw new Error('target pips did not drop after a hit');
-    await page.waitForSelector('.zen-gate', { state: 'detached', timeout: 6000 });
+    await page.mouse.move(boxes[0].x - 60, boxes[0].y + 10);
+    await page.mouse.down();
+    for (const b of boxes) {
+      await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2, { steps: 10 });
+      await page.waitForTimeout(120);
+    }
+    await page.mouse.up();
+    const lit = await page.locator('.con-note.lit').count();
+    if (lit !== 3) throw new Error(`only ${lit}/3 notes lit after the sweep`);
+    // finale: overture replay, then the gate dismisses itself
+    await page.waitForSelector('.con-gate', { state: 'detached', timeout: 9000 });
     const overflow = await page.evaluate(() => document.body.style.overflow);
-    if (overflow === 'hidden') throw new Error('scroll still locked after win');
+    if (overflow === 'hidden') throw new Error('scroll still locked after the finale');
   });
   await check('gate shows again on every reload', async () => {
     await page.goto(baseUrl + '/?game=1');
-    await page.waitForSelector('.zen-gate', { timeout: 3000 });
-    await page.click('.zen-close'); // leave the main page clean for later checks
-    await page.waitForSelector('.zen-gate', { state: 'detached', timeout: 3000 });
+    await page.waitForSelector('.con-gate', { timeout: 3000 });
+    await page.click('.con-close'); // leave the main page clean for later checks
+    await page.waitForSelector('.con-gate', { state: 'detached', timeout: 3000 });
+  });
+  await check('mute button toggles', async () => {
+    const p2 = await browser.newPage();
+    await p2.goto(baseUrl + '/zh?game=1');
+    await p2.waitForSelector('.con-mute', { timeout: 3000 });
+    await p2.click('.con-mute');
+    const mutedOn = (await p2.locator('.con-mute.con-muted').count()) === 1;
+    await p2.click('.con-mute');
+    const mutedOff = (await p2.locator('.con-mute.con-muted').count()) === 0;
+    if (!mutedOn || !mutedOff) throw new Error('mute toggle classes did not switch');
+    await p2.close();
   });
   await check('skip button (x) dismisses the gate', async () => {
     const p2 = await browser.newPage();
     await p2.goto(baseUrl + '/zh?game=1');
-    await p2.waitForSelector('.zen-gate', { timeout: 3000 });
-    await p2.click('.zen-close');
-    await p2.waitForSelector('.zen-gate', { state: 'detached', timeout: 3000 });
+    await p2.waitForSelector('.con-gate', { timeout: 3000 });
+    await p2.click('.con-close');
+    await p2.waitForSelector('.con-gate', { state: 'detached', timeout: 3000 });
     await p2.close();
   });
   await check('gate never shows under reduced motion', async () => {
@@ -145,14 +161,14 @@ const run = async () => {
     const p3 = await ctx.newPage();
     await p3.goto(baseUrl + '/?game=1');
     await p3.waitForTimeout(400);
-    const n = await p3.locator('.zen-gate').count();
+    const n = await p3.locator('.con-gate').count();
     await ctx.close();
     if (n !== 0) throw new Error('gate shown despite prefers-reduced-motion');
   });
   await check('gate stays out of the way of automated checks', async () => {
     await page.goto(baseUrl + '/');
     await page.waitForTimeout(300);
-    const n = await page.locator('.zen-gate').count();
+    const n = await page.locator('.con-gate').count();
     if (n !== 0) throw new Error('gate shown without ?game=1 under webdriver');
   });
 
