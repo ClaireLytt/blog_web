@@ -1008,6 +1008,123 @@ main.container {
   color: var(--color-border);
 }
 
+/* ---- mode switching: menu shows the doors, game shows the instrument */
+.con-mode-menu .con-staff,
+.con-mode-menu .con-hint,
+.con-mode-menu .con-count,
+.con-mode-menu .con-word,
+.con-mode-menu .con-mute,
+.con-mode-menu .con-esc,
+.con-mode-menu .con-dot {
+  display: none;
+}
+
+.con-mode-game .con-menu {
+  display: none;
+}
+
+.con-mode-menu {
+  cursor: auto;
+}
+
+/* ---- the menu: two doors */
+.con-menu {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2.6rem;
+}
+
+.con-menu-title {
+  font-size: 0.8rem;
+  letter-spacing: 0.5em;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  animation: riseIn 0.6s ease-out backwards 0.1s;
+}
+
+.con-doors {
+  display: flex;
+  gap: 1.6rem;
+}
+
+.con-door {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  width: 200px;
+  padding: 2.2rem 1.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-bg);
+  box-shadow: var(--shadow-card);
+  cursor: pointer;
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+  animation: riseIn 0.6s ease-out backwards;
+}
+
+.con-door-game { animation-delay: 0.22s; }
+.con-door-blog { animation-delay: 0.34s; }
+
+.con-door:hover {
+  transform: translateY(-5px);
+  border-color: var(--color-accent-light);
+  box-shadow: var(--shadow-card-hover);
+}
+
+.con-door-name {
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: 0.35em;
+  color: var(--color-text);
+}
+
+.con-door:hover .con-door-name {
+  color: var(--color-accent);
+}
+
+.con-door-sub {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+}
+
+.con-door-game .con-door-name {
+  background: var(--gradient-accent);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+@media (max-width: 560px) {
+  .con-doors { flex-direction: column; }
+}
+
+/* ---- in-game exit: near the play area's upper right, hard to miss */
+.con-esc {
+  position: absolute;
+  top: 22%;
+  right: 16%;
+  padding: 0.55rem 1.1rem;
+  border: 1.5px solid var(--color-accent);
+  border-radius: 999px;
+  background: rgba(37, 99, 235, 0.06);
+  color: var(--color-accent);
+  font-size: 0.78rem;
+  letter-spacing: 0.18em;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.con-esc:hover {
+  background: rgba(37, 99, 235, 0.14);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.2);
+}
+
 /* ============ 404 ============ */
 .notfound-num {
   font-size: 5rem;

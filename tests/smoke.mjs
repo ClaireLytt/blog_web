@@ -81,26 +81,50 @@ const run = async () => {
   const page = await browser.newPage();
 
   // -------------------------------------------------- home (EN)
-  // -------------------------------------------------- conductor gate (entry game)
-  // Must run first: the gate overlays the home page until played or skipped.
+  // -------------------------------------------------- conductor gate (entry overlay)
+  // Must run first: the overlay covers the home page until resolved.
   // Automated browsers only see it with ?game=1 (navigator.webdriver escape
   // hatch) — real visitors get it on every page load.
-  section('Conductor gate (entry game)');
-  await check('gate shows on page load and locks scroll', async () => {
+  section('Conductor gate (entry overlay)');
+  await check('menu shows on page load: two doors, scroll locked', async () => {
     await page.goto(baseUrl + '/?game=1');
-    await page.waitForSelector('.con-gate', { timeout: 3000 });
+    await page.waitForSelector('.con-gate.con-mode-menu', { timeout: 3000 });
+    const doors = await page.locator('.con-door').count();
+    if (doors !== 2) throw new Error(`expected 2 doors, found ${doors}`);
     const overflow = await page.evaluate(() => document.body.style.overflow);
     if (overflow !== 'hidden') throw new Error(`scroll not locked: "${overflow}"`);
   });
-  await check('staff renders three unlit notes and the counter', async () => {
+  await check('BLOG door dismisses straight to the blog', async () => {
+    const p2 = await browser.newPage();
+    await p2.goto(baseUrl + '/?game=1');
+    await p2.waitForSelector('.con-door-blog', { timeout: 3000 });
+    await p2.click('.con-door-blog');
+    await p2.waitForSelector('.con-gate', { state: 'detached', timeout: 3000 });
+    const overflow = await p2.evaluate(() => document.body.style.overflow);
+    await p2.close();
+    if (overflow === 'hidden') throw new Error('scroll still locked after BLOG');
+  });
+  await check('GAME door enters the game (staff, counter, URL #game)', async () => {
+    await page.click('.con-door-game');
+    await page.waitForSelector('.con-gate.con-mode-game', { timeout: 3000 });
     const n = await page.locator('.con-note').count();
     if (n !== 3) throw new Error(`expected 3 notes, found ${n}`);
-    const lit = await page.locator('.con-note.lit').count();
-    if (lit !== 0) throw new Error(`${lit} notes lit before playing`);
     const count = await page.textContent('.con-count');
     if (!/0\/3/.test(count)) throw new Error(`counter = "${count}"`);
+    const hash = await page.evaluate(() => location.hash);
+    if (hash !== '#game') throw new Error(`hash = "${hash}"`);
   });
-  await check('holding and waving plays (baton grows, bars canvas live)', async () => {
+  await check('in-game ESC button is visible and returns to the menu', async () => {
+    const esc = page.locator('.con-esc');
+    if (!(await esc.isVisible())) throw new Error('ESC button not visible in game');
+    await esc.click();
+    await page.waitForSelector('.con-gate.con-mode-menu', { timeout: 3000 });
+    const hash = await page.evaluate(() => location.hash);
+    if (hash === '#game') throw new Error('hash not cleared after exiting the game');
+  });
+  await check('holding and waving plays (baton grows and releases)', async () => {
+    await page.click('.con-door-game');
+    await page.waitForSelector('.con-gate.con-mode-game', { timeout: 3000 });
     await page.mouse.move(200, 500);
     await page.mouse.down();
     await page.waitForTimeout(150);
@@ -131,15 +155,21 @@ const run = async () => {
     const overflow = await page.evaluate(() => document.body.style.overflow);
     if (overflow === 'hidden') throw new Error('scroll still locked after the finale');
   });
-  await check('gate shows again on every reload', async () => {
+  await check('menu shows again on every reload', async () => {
     await page.goto(baseUrl + '/?game=1');
-    await page.waitForSelector('.con-gate', { timeout: 3000 });
+    await page.waitForSelector('.con-gate.con-mode-menu', { timeout: 3000 });
     await page.click('.con-close'); // leave the main page clean for later checks
     await page.waitForSelector('.con-gate', { state: 'detached', timeout: 3000 });
   });
+  await check('#game deep link goes straight into the game', async () => {
+    const p2 = await browser.newPage();
+    await p2.goto(baseUrl + '/?game=1#game');
+    await p2.waitForSelector('.con-gate.con-mode-game', { timeout: 3000 });
+    await p2.close();
+  });
   await check('mute button toggles', async () => {
     const p2 = await browser.newPage();
-    await p2.goto(baseUrl + '/zh?game=1');
+    await p2.goto(baseUrl + '/zh?game=1#game');
     await p2.waitForSelector('.con-mute', { timeout: 3000 });
     await p2.click('.con-mute');
     const mutedOn = (await p2.locator('.con-mute.con-muted').count()) === 1;
@@ -148,7 +178,7 @@ const run = async () => {
     if (!mutedOn || !mutedOff) throw new Error('mute toggle classes did not switch');
     await p2.close();
   });
-  await check('skip button (x) dismisses the gate', async () => {
+  await check('skip button (x) dismisses the overlay', async () => {
     const p2 = await browser.newPage();
     await p2.goto(baseUrl + '/zh?game=1');
     await p2.waitForSelector('.con-gate', { timeout: 3000 });
@@ -156,20 +186,20 @@ const run = async () => {
     await p2.waitForSelector('.con-gate', { state: 'detached', timeout: 3000 });
     await p2.close();
   });
-  await check('gate never shows under reduced motion', async () => {
+  await check('overlay never shows under reduced motion', async () => {
     const ctx = await browser.newContext({ reducedMotion: 'reduce' });
     const p3 = await ctx.newPage();
     await p3.goto(baseUrl + '/?game=1');
     await p3.waitForTimeout(400);
     const n = await p3.locator('.con-gate').count();
     await ctx.close();
-    if (n !== 0) throw new Error('gate shown despite prefers-reduced-motion');
+    if (n !== 0) throw new Error('overlay shown despite prefers-reduced-motion');
   });
-  await check('gate stays out of the way of automated checks', async () => {
+  await check('overlay stays out of the way of automated checks', async () => {
     await page.goto(baseUrl + '/');
     await page.waitForTimeout(300);
     const n = await page.locator('.con-gate').count();
-    if (n !== 0) throw new Error('gate shown without ?game=1 under webdriver');
+    if (n !== 0) throw new Error('overlay shown without ?game=1 under webdriver');
   });
 
   section('Home (EN)');

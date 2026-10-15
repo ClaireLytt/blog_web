@@ -1,56 +1,103 @@
 ---
 /**
- * Entry game — "The Conductor".
- * Hold the mouse and wave: Y controls pitch (quantized to a pentatonic
- * scale so anything you play sounds good), X controls brightness
- * (low-pass filter cutoff). A row of spectrum bars at the bottom
- * dances to the real AnalyserNode data. Sweep the cursor through the
- * three hollow notes on the staff to light them; then your own
- * recording plays back as the overture, and the blog fades in.
- * No audio files — everything is synthesized with Web Audio.
- * Skippable (× / Esc); shows on every load; never on touch devices or
- * under prefers-reduced-motion; automated browsers skip unless ?game=1.
+ * Entry overlay — a chooser, then "The Conductor" music game.
+ *
+ * On every home-page load a menu offers two buttons: GAME and BLOG.
+ * BLOG dismisses the overlay; GAME starts the conductor (the URL hash
+ * becomes #game, so /#game deep-links straight into the game).
+ *
+ * The game: hold the mouse and wave — Y picks the pitch (quantized to
+ * a D-flat major pentatonic, a nod to Clair de Lune), X opens a gentle
+ * low-pass filter. Triangle lead over a sub-octave sine with a soft
+ * echo: moonlight, not sawtooth. Spectrum bars at the bottom dance to
+ * live AnalyserNode data. Sweep through the three notes on the staff
+ * to light them; your own recording then plays back as the overture,
+ * and the blog fades in. A clearly visible ESC button sits near the
+ * game's upper right; Esc (or the button) exits back to the menu.
+ *
+ * No audio files, no libraries. Never shown on touch devices or under
+ * prefers-reduced-motion; automated browsers skip unless ?game=1.
  */
 interface Props {
   lang?: 'en' | 'zh';
 }
+
 const { lang = 'en' } = Astro.props;
+
 const t =
   lang === 'zh'
     ? {
+        menuTitle: '两扇门。',
+        game: 'GAME',
+        gameSub: '指挥一段月光',
+        blog: 'BLOG',
+        blogSub: '直接阅读',
         hint: '按住，挥动，即是演奏。',
         sub: '点亮谱线上的三个音符',
         count: '音符',
         overture: '你的序曲 —',
         scroll: '向下滑动',
+        esc: 'ESC 退出游戏',
       }
     : {
+        menuTitle: 'two doors.',
+        game: 'GAME',
+        gameSub: 'conduct a little moonlight',
+        blog: 'BLOG',
+        blogSub: 'straight to reading',
         hint: 'hold and wave. that is playing.',
         sub: 'light the three notes on the staff',
         count: 'notes',
         overture: 'your overture —',
         scroll: 'scroll down',
+        esc: 'ESC quit game',
       };
 ---
-<div class="con-gate" id="con-gate" data-i18n={JSON.stringify(t)}>
+
+<div class="con-gate con-mode-menu" id="con-gate" data-i18n={JSON.stringify(t)}>
   <canvas class="con-bars" aria-hidden="true"></canvas>
+
+  <!-- ======== menu state: two doors ======== -->
+  <div class="con-menu">
+    <p class="con-menu-title mono">{t.menuTitle}</p>
+    <div class="con-doors">
+      <button class="con-door con-door-game">
+        <span class="con-door-name mono">{t.game}</span>
+        <span class="con-door-sub">{t.gameSub}</span>
+      </button>
+      <button class="con-door con-door-blog">
+        <span class="con-door-name mono">{t.blog}</span>
+        <span class="con-door-sub">{t.blogSub}</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ======== game state ======== -->
   <div class="con-staff" aria-hidden="true">
     <span class="con-note" style="left: 28%"></span>
     <span class="con-note" style="left: 50%"></span>
     <span class="con-note" style="left: 72%"></span>
   </div>
+
   <div class="con-dot" aria-hidden="true"></div>
+
   <p class="con-hint mono">
     {t.hint}
     <span class="con-sub">{t.sub}</span>
   </p>
   <p class="con-word mono" aria-live="polite"></p>
   <span class="con-count mono">0/3 {t.count}</span>
+
+  <!-- in-game exit: near the game's upper right, hard to miss -->
+  <button class="con-esc mono">{t.esc}</button>
+
   <button class="con-mute mono" aria-label="mute">♪</button>
   <button class="con-close mono" aria-label="skip">×</button>
 </div>
+
 <script>
   const gate = document.getElementById('con-gate');
+
   const skip =
     !gate ||
     // test escape hatch: automated browsers skip the gate unless a test
@@ -58,6 +105,7 @@ const t =
     (navigator.webdriver && !location.search.includes('game=1')) ||
     window.matchMedia('(prefers-reduced-motion: reduce)').matches ||
     window.matchMedia('(pointer: coarse)').matches;
+
   if (skip) {
     gate?.remove();
   } else {
@@ -69,14 +117,18 @@ const t =
     const muteBtn = gate.querySelector<HTMLElement>('.con-mute')!;
     const canvas = gate.querySelector<HTMLCanvasElement>('.con-bars')!;
     const ctx = canvas.getContext('2d')!;
+
     document.body.style.overflow = 'hidden';
     canvas.width = window.innerWidth;
     canvas.height = 160;
-    // ---- synth: saw lead + sub sine → lowpass → gain → analyser → out
+
+    // ---- synth: triangle lead + sub sine → gentle lowpass → soft echo
+    // (aiming for moonlight, not a saw lead)
     let ac: AudioContext | null = null;
     let osc: OscillatorNode, sub: OscillatorNode, filt: BiquadFilterNode;
     let gain: GainNode, master: GainNode, analyser: AnalyserNode | null = null;
     let muted = false;
+
     const ensureAudio = () => {
       if (ac) {
         ac.resume();
@@ -85,23 +137,37 @@ const t =
       try {
         ac = new AudioContext();
         osc = ac.createOscillator();
-        osc.type = 'sawtooth';
+        osc.type = 'triangle';
         sub = ac.createOscillator();
         sub.type = 'sine';
         filt = ac.createBiquadFilter();
         filt.type = 'lowpass';
-        filt.Q.value = 5;
+        filt.Q.value = 0.8; // no resonance bite — keep it round
         gain = ac.createGain();
         gain.gain.value = 0;
         master = ac.createGain();
         master.gain.value = muted ? 0 : 1;
         analyser = ac.createAnalyser();
         analyser.fftSize = 256;
-        analyser.smoothingTimeConstant = 0.82;
+        analyser.smoothingTimeConstant = 0.85;
+
+        // a quiet echo gives the pedal-down, impressionist wash
+        const delay = ac.createDelay(1);
+        delay.delayTime.value = 0.28;
+        const feedback = ac.createGain();
+        feedback.gain.value = 0.32;
+        const wet = ac.createGain();
+        wet.gain.value = 0.3;
+
         osc.connect(filt);
         sub.connect(filt);
         filt.connect(gain);
         gain.connect(analyser);
+        gain.connect(delay);
+        delay.connect(feedback);
+        feedback.connect(delay);
+        delay.connect(wet);
+        wet.connect(analyser);
         analyser.connect(master);
         master.connect(ac.destination);
         osc.start();
@@ -110,46 +176,54 @@ const t =
         ac = null; // no audio? the game still works silently
       }
     };
-    // C-major pentatonic across two octaves: wave anywhere, it sounds fine
-    const PENT = [60, 62, 64, 67, 69, 72, 74, 76, 79, 81, 84];
+
+    // D-flat major pentatonic, two octaves — Clair de Lune's home key
+    const PENT = [61, 63, 65, 68, 70, 73, 75, 77, 80, 82, 85];
     const midiHz = (m: number) => 440 * Math.pow(2, (m - 69) / 12);
+
     const setVoice = (x: number, y: number) => {
       if (!ac) return;
       const yr = 1 - Math.min(Math.max(y / window.innerHeight, 0), 1);
       const midi = PENT[Math.min(Math.floor(yr * PENT.length), PENT.length - 1)]!;
       const f = midiHz(midi);
       const now = ac.currentTime;
-      osc.frequency.setTargetAtTime(f, now, 0.03); // light portamento
-      sub.frequency.setTargetAtTime(f / 2, now, 0.03);
-      const cutoff = 300 * Math.pow(16, Math.min(Math.max(x / window.innerWidth, 0), 1));
-      filt.frequency.setTargetAtTime(cutoff, now, 0.05);
+      osc.frequency.setTargetAtTime(f, now, 0.07); // legato, unhurried
+      sub.frequency.setTargetAtTime(f / 2, now, 0.07);
+      const cutoff = 250 * Math.pow(12, Math.min(Math.max(x / window.innerWidth, 0), 1));
+      filt.frequency.setTargetAtTime(cutoff, now, 0.08);
       return { f, cutoff };
     };
-    const voiceOn = () => ac && gain.gain.setTargetAtTime(0.14, ac.currentTime, 0.04);
-    const voiceOff = () => ac && gain.gain.setTargetAtTime(0, ac.currentTime, 0.08);
-    // confirmation sparkle when a note lights up: a short sine arpeggio tone
+
+    const voiceOn = () => ac && gain.gain.setTargetAtTime(0.11, ac.currentTime, 0.06);
+    const voiceOff = () => ac && gain.gain.setTargetAtTime(0, ac.currentTime, 0.12);
+
+    // confirmation sparkle: a long soft sine — Db5 / F5 / Ab5 chord tones
     const blip = (midi: number) => {
       if (!ac || !analyser) return;
       const o = ac.createOscillator();
       const g = ac.createGain();
       o.type = 'sine';
       o.frequency.value = midiHz(midi);
-      g.gain.setValueAtTime(0.22, ac.currentTime);
-      g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.5);
+      g.gain.setValueAtTime(0.16, ac.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.9);
       o.connect(g);
       g.connect(analyser);
       o.start();
-      o.stop(ac.currentTime + 0.55);
+      o.stop(ac.currentTime + 0.95);
     };
+
     // ---- game state
+    let mode: 'menu' | 'game' = 'menu';
     let playing = false;
     let finale = false;
     let lit = 0;
-    const rec: { dt: number; f: number; c: number; off?: boolean }[] = [];
+    let rec: { dt: number; f: number; c: number; off?: boolean }[] = [];
     let recStart = 0;
+
     // ---- spectrum bars (idle shimmer before audio exists)
     const BARS = 24;
     const freqData = new Uint8Array(128);
+
     const draw = (now: number) => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       const bw = canvas.width / BARS;
@@ -171,13 +245,44 @@ const t =
       requestAnimationFrame(draw);
     };
     requestAnimationFrame(draw);
+
+    // ---- mode switching (the URL hash mirrors it: /#game deep-links in)
+    const setHash = (on: boolean) => {
+      try {
+        history.replaceState(null, '', location.pathname + location.search + (on ? '#game' : ''));
+      } catch {}
+    };
+
+    const enterGame = () => {
+      mode = 'game';
+      gate.classList.remove('con-mode-menu');
+      gate.classList.add('con-mode-game');
+      setHash(true);
+    };
+
+    const exitToMenu = () => {
+      if (finale) return;
+      mode = 'menu';
+      stopPlaying();
+      // reset the round
+      lit = 0;
+      rec = [];
+      notes.forEach((n) => n.classList.remove('lit'));
+      countEl.textContent = `0/3 ${t.count}`;
+      word.classList.remove('con-word-in');
+      gate.classList.remove('con-mode-game');
+      gate.classList.add('con-mode-menu');
+      setHash(false);
+    };
+
     // ---- pointer = baton
     const moveDot = (x: number, y: number) => {
       dot.style.transform = `translate(${x}px, ${y}px) translate(-50%, -50%)`;
     };
+
     gate.addEventListener('pointerdown', (e) => {
-      if (finale) return;
-      if ((e.target as HTMLElement).closest('.con-close, .con-mute')) return;
+      if (mode !== 'game' || finale) return;
+      if ((e.target as HTMLElement).closest('.con-close, .con-mute, .con-esc')) return;
       ensureAudio();
       playing = true;
       dot.classList.add('con-dot-on');
@@ -188,6 +293,7 @@ const t =
       moveDot(e.clientX, e.clientY);
       checkNotes(e.clientX, e.clientY);
     });
+
     gate.addEventListener('pointermove', (e) => {
       moveDot(e.clientX, e.clientY);
       if (!playing || finale) return;
@@ -195,6 +301,7 @@ const t =
       if (v) rec.push({ dt: performance.now() - recStart, f: v.f, c: v.cutoff });
       checkNotes(e.clientX, e.clientY);
     });
+
     const stopPlaying = () => {
       if (!playing) return;
       playing = false;
@@ -204,8 +311,9 @@ const t =
     };
     gate.addEventListener('pointerup', stopPlaying);
     gate.addEventListener('pointerleave', stopPlaying);
+
     // ---- the three notes: sweep through them while playing
-    const CHORD = [72, 76, 79]; // C5 E5 G5 — lighting all three spells the chord
+    const CHORD = [73, 77, 80]; // Db5 F5 Ab5 — the chord spells itself
     function checkNotes(x: number, y: number) {
       notes.forEach((n, i) => {
         if (n.classList.contains('lit')) return;
@@ -220,9 +328,11 @@ const t =
         }
       });
     }
+
     // ---- finale: your own recording plays back, then the blog
     const dismiss = () => {
       document.body.style.overflow = '';
+      setHash(false);
       gate.classList.add('con-gate-out');
       setTimeout(() => {
         try {
@@ -231,14 +341,17 @@ const t =
         gate.remove();
       }, 700);
     };
+
     function beginFinale() {
       finale = true;
       stopPlaying();
       word.textContent = t.overture;
       word.classList.add('con-word-in');
+
       const REPLAY_MS = Math.min(rec.length ? rec[rec.length - 1]!.dt : 0, 3200);
       const begin = performance.now();
       let idx = 0;
+
       const step = (now: number) => {
         const el = now - begin;
         if (el >= REPLAY_MS || !ac) {
@@ -252,9 +365,9 @@ const t =
           if (s.off) voiceOff();
           else {
             const nowA = ac.currentTime;
-            osc.frequency.setTargetAtTime(s.f, nowA, 0.03);
-            sub.frequency.setTargetAtTime(s.f / 2, nowA, 0.03);
-            filt.frequency.setTargetAtTime(s.c, nowA, 0.05);
+            osc.frequency.setTargetAtTime(s.f, nowA, 0.07);
+            sub.frequency.setTargetAtTime(s.f / 2, nowA, 0.07);
+            filt.frequency.setTargetAtTime(s.c, nowA, 0.08);
             voiceOn();
           }
           idx++;
@@ -268,7 +381,11 @@ const t =
         setTimeout(dismiss, 1000);
       }
     }
+
     // ---- controls
+    gate.querySelector('.con-door-game')!.addEventListener('click', enterGame);
+    gate.querySelector('.con-door-blog')!.addEventListener('click', dismiss);
+    gate.querySelector('.con-esc')!.addEventListener('click', exitToMenu);
     muteBtn.addEventListener('click', () => {
       muted = !muted;
       muteBtn.textContent = muted ? '∅' : '♪';
@@ -277,7 +394,12 @@ const t =
     });
     gate.querySelector('.con-close')!.addEventListener('click', () => dismiss());
     window.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && gate.isConnected) dismiss();
+      if (e.key !== 'Escape' || !gate.isConnected) return;
+      if (mode === 'game') exitToMenu();
+      else dismiss();
     });
+
+    // deep link: /#game goes straight into the game
+    if (location.hash === '#game') enterGame();
   }
 </script>
