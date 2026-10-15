@@ -108,6 +108,11 @@ const xDefaultUrl = lang === 'zh' ? alternateUrl : canonicalUrl;
     <title>{title}</title>
   </head>
   <body>
+    <div class="ambient" aria-hidden="true">
+      <div class="ambient-blob ambient-blob-a"></div>
+      <div class="ambient-blob ambient-blob-b"></div>
+    </div>
+
     <header class="site-header">
       <nav class="nav">
         <a href={lang === 'zh' ? '/zh' : '/'} class="nav-logo">Claire.dev</a>
@@ -124,6 +129,11 @@ const xDefaultUrl = lang === 'zh' ? alternateUrl : canonicalUrl;
       </nav>
     </header>
 
+    <!-- full-viewport overlays (e.g. the entry game) must live outside
+         main: its pageIn transform animation turns it into the containing
+         block for position: fixed descendants -->
+    <slot name="gate" />
+
     <main class="container">
       <slot />
     </main>
@@ -134,6 +144,17 @@ const xDefaultUrl = lang === 'zh' ? alternateUrl : canonicalUrl;
     </footer>
 
     <script>
+      // spotlight: track the pointer inside each post card (CSS draws the light)
+      if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        document.querySelectorAll<HTMLElement>('.post-card').forEach((card) => {
+          card.addEventListener('pointermove', (e) => {
+            const r = card.getBoundingClientRect();
+            card.style.setProperty('--mx', `${e.clientX - r.left}px`);
+            card.style.setProperty('--my', `${e.clientY - r.top}px`);
+          });
+        });
+      }
+
       const observer = new IntersectionObserver(
         (entries) => {
           for (const entry of entries) {

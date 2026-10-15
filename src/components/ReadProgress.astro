@@ -1,0 +1,29 @@
+---
+// Thin gradient bar fixed to the top of article pages; fills as you scroll.
+---
+
+<div class="read-progress" id="read-progress" aria-hidden="true"></div>
+
+<script>
+  const bar = document.getElementById('read-progress')!;
+  let ticking = false;
+
+  const update = () => {
+    const max = document.documentElement.scrollHeight - window.innerHeight;
+    const ratio = max > 0 ? Math.min(window.scrollY / max, 1) : 0;
+    bar.style.transform = `scaleX(${ratio})`;
+    ticking = false;
+  };
+
+  window.addEventListener(
+    'scroll',
+    () => {
+      if (!ticking) {
+        ticking = true;
+        requestAnimationFrame(update);
+      }
+    },
+    { passive: true }
+  );
+  update();
+</script>

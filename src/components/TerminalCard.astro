@@ -1,0 +1,95 @@
+---
+/**
+ * macOS-style terminal window that types its lines one by one.
+ * `lines`: [{ cmd: 'whoami', out: ['Yantong Li — ...'] }, ...]
+ * Commands are typed character by character; output appears line by line.
+ * Under prefers-reduced-motion everything renders instantly.
+ */
+interface Line {
+  cmd: string;
+  out: string[];
+}
+
+interface Props {
+  title?: string;
+  lines: Line[];
+}
+
+const { title = 'claire@dev: ~', lines } = Astro.props;
+---
+
+<div class="term fade-in" data-lines={JSON.stringify(lines)}>
+  <div class="term-bar" aria-hidden="true">
+    <span class="term-dot term-dot-r"></span>
+    <span class="term-dot term-dot-y"></span>
+    <span class="term-dot term-dot-g"></span>
+    <span class="term-title">{title}</span>
+  </div>
+  <div class="term-body" aria-label="terminal introduction"></div>
+</div>
+
+<script>
+  const term = document.querySelector<HTMLElement>('.term')!;
+  const body = term.querySelector<HTMLElement>('.term-body')!;
+  const lines: { cmd: string; out: string[] }[] = JSON.parse(term.dataset.lines!);
+
+  const PROMPT = '<span class="t-prompt">$</span> ';
+  const esc = (s: string) =>
+    s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const outHtml = (s: string) =>
+    `<div class="t-out">${esc(s).replace(/\*\*(.+?)\*\*/g, '<span class="t-accent">$1</span>')}</div>`;
+
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    body.innerHTML = lines
+      .map(
+        (l) =>
+          `<div>${PROMPT}<span class="t-cmd">${esc(l.cmd)}</span></div>` +
+          l.out.map(outHtml).join('')
+      )
+      .join('');
+  } else {
+    const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+    const run = async () => {
+      for (const line of lines) {
+        const row = document.createElement('div');
+        row.innerHTML = PROMPT + '<span class="t-cmd"></span>';
+        const cmdEl = row.querySelector<HTMLElement>('.t-cmd')!;
+        const cursor = document.createElement('span');
+        cursor.className = 'term-cursor';
+        row.appendChild(cursor);
+        body.appendChild(row);
+
+        for (const ch of line.cmd) {
+          cmdEl.textContent += ch;
+          await sleep(45 + Math.random() * 40);
+        }
+        await sleep(300);
+        cursor.remove();
+
+        for (const out of line.out) {
+          body.insertAdjacentHTML('beforeend', outHtml(out));
+          await sleep(140);
+        }
+        await sleep(450);
+      }
+      // leave an idle prompt with a blinking cursor
+      body.insertAdjacentHTML(
+        'beforeend',
+        `<div>${PROMPT}<span class="term-cursor"></span></div>`
+      );
+    };
+
+    // start typing only when the terminal scrolls into view
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]!.isIntersecting) {
+          io.disconnect();
+          run();
+        }
+      },
+      { threshold: 0.3 }
+    );
+    io.observe(term);
+  }
+</script>

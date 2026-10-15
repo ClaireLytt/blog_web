@@ -1,6 +1,8 @@
 ---
 import { getCollection } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import TerminalCard from '../../components/TerminalCard.astro';
+import ConductorGate from '../../components/ConductorGate.astro';
 
 const posts = (await getCollection('blog', ({ id }) => id.startsWith('zh/')))
   .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf())
@@ -11,14 +13,27 @@ const formatDate = (date: Date) =>
 ---
 
 <BaseLayout title="Yantong Li — 技术博客" lang="zh">
+  <ConductorGate lang="zh" slot="gate" />
   <section class="hero">
-    <h1>你好，我是 Yantong Li！</h1>
+    <p class="hero-eyebrow">Code · Open Source · Notes</p>
+    <h1>你好，我是 <span class="shimmer">Yantong Li</span>！</h1>
     <p class="hero-typing"><span id="typing"></span><span class="cursor"></span></p>
+    <hr class="hero-rule" />
     <p class="hero-desc">
       欢迎来到我的小站。我在这里记录编程、开源，以及一路学到的东西。
     </p>
-    <a href="/zh/blog" class="btn btn-primary">阅读博客</a>
+    <a href="/zh/blog" class="btn btn-primary">阅读博客<span class="btn-arrow">›</span></a>
     <a href="/zh/about" class="btn btn-ghost">关于我</a>
+  </section>
+
+  <section class="section">
+    <TerminalCard
+      lines={[
+        { cmd: 'whoami', out: ['Yantong Li — 开发者，**Apache ShardingSphere** Committer'] },
+        { cmd: 'cat interests.txt', out: ['java · 分布式系统 · 开源 · 数据库'] },
+        { cmd: 'echo $MOTTO', out: ['"理解一件事最好的方式，是把它讲明白。"'] },
+      ]}
+    />
   </section>
 
   <section class="section">
