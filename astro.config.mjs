@@ -5,6 +5,8 @@ import sitemap from '@astrojs/sitemap';
 // sitemap and RSS links point to the wrong domain.
 export default defineConfig({
   site: 'https://clairelyt.netlify.app',
+  // hide the dev-only toolbar (the four icons at the bottom in `npm run dev`)
+  devToolbar: { enabled: false },
   integrations: [sitemap()],
   markdown: {
     shikiConfig: {

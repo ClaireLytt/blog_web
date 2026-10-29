@@ -1,6 +1,8 @@
 ---
 import { getCollection } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
+import TerminalCard from '../components/TerminalCard.astro';
+import ConductorGate from '../components/ConductorGate.astro';
 
 const posts = (await getCollection('blog', ({ id }) => id.startsWith('en/')))
   .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf())
@@ -11,15 +13,28 @@ const formatDate = (date: Date) =>
 ---
 
 <BaseLayout title="Yantong Li — Tech Blog" lang="en">
+  <ConductorGate lang="en" slot="gate" />
   <section class="hero">
-    <h1>Hi, I'm Yantong Li!</h1>
+    <p class="hero-eyebrow">Code · Open Source · Notes</p>
+    <h1>Hi, I'm <span class="shimmer">Yantong Li</span>!</h1>
     <p class="hero-typing"><span id="typing"></span><span class="cursor"></span></p>
+    <hr class="hero-rule" />
     <p class="hero-desc">
       Welcome to my corner of the internet. I write about programming, open source,
       and the things I learn along the way.
     </p>
-    <a href="/blog" class="btn btn-primary">Read the Blog</a>
+    <a href="/blog" class="btn btn-primary">Read the Blog<span class="btn-arrow">›</span></a>
     <a href="/about" class="btn btn-ghost">About Me</a>
+  </section>
+
+  <section class="section">
+    <TerminalCard
+      lines={[
+        { cmd: 'whoami', out: ['Yantong Li — developer, **Apache ShardingSphere** Committer'] },
+        { cmd: 'cat interests.txt', out: ['java · distributed systems · open source · databases'] },
+        { cmd: 'echo $MOTTO', out: ['"The best way to understand something is to explain it."'] },
+      ]}
+    />
   </section>
 
   <section class="section">
